@@ -65,9 +65,8 @@ type ZFSCollector struct {
 	Deadline   time.Duration
 	Pools      []string
 	Collectors map[string]State
-	cache      map[string]prometheus.Metric
+	cache      *metricCache
 	done       chan struct{}
-	mu         sync.RWMutex
 }
 
 // Describe implements the prometheus.Collector interface.
@@ -78,44 +77,36 @@ func (c *ZFSCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements the prometheus.Collector interface.
 func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
-	c.mu.RLock()
 	select {
 	case <-c.done:
-		c.mu.RUnlock()
 	default:
-		c.mu.RUnlock()
 		c.sendCached(ch, make(map[string]struct{}))
 		return
 	}
-	c.mu.Lock()
-	c.done = make(chan struct{})
-	c.mu.Unlock()
-	mu := sync.Mutex{}
 	ctx, cancel := context.WithTimeout(context.Background(), c.Deadline)
 	defer cancel()
 
+	cache := newMetricCache()
 	proxy := make(chan metric)
-	cache := make(map[string]prometheus.Metric)
-	timeout := make(chan struct{})
+	// Synchronize on collector completion.
 	wg := sync.WaitGroup{}
 	wg.Add(len(c.Collectors))
+	// Synchonize after timeout event, ensuring no writers are still active when we return control.
+	timeout := make(chan struct{})
+	timeoutMutex := sync.Mutex{}
 
 	// Upon exceeding deadline, send cached data for any metrics that have not already been reported.
 	go func() {
 		select {
 		case <-ctx.Done():
-			mu.Lock()
-			cacheIndex := make(map[string]struct{}, len(cache))
-			c.mu.Lock()
-			for name, metric := range cache {
-				c.cache[name] = metric
-				cacheIndex[name] = struct{}{}
+			if err := ctx.Err(); err != nil && err != context.Canceled {
+				timeoutMutex.Lock()
+				c.cache.merge(cache)
+				cacheIndex := cache.index()
+				c.sendCached(ch, cacheIndex)
+				close(timeout) // assert timeout for flow control in other goroutines
+				timeoutMutex.Unlock()
 			}
-			c.mu.Unlock()
-			c.sendCached(ch, cacheIndex)
-			close(timeout) // assert timeout for flow control in other goroutines
-			mu.Unlock()
-		case <-c.done:
 		}
 	}()
 
@@ -128,22 +119,20 @@ func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
 	// Cache metrics as they come in via the proxy channel, and ship them out if we've not exceeded the deadline.
 	go func() {
 		for metric := range proxy {
-			mu.Lock()
-			cache[metric.name] = metric.prometheus
+			timeoutMutex.Lock()
+			cache.add(metric)
 			select {
 			case <-timeout:
-				mu.Unlock()
+				timeoutMutex.Unlock()
 				continue
 			default:
 				ch <- metric.prometheus
-				mu.Unlock()
+				timeoutMutex.Unlock()
 			}
 		}
-		// Signal completion.
-		c.mu.Lock()
-		c.cache = cache
-		close(c.done)
-		c.mu.Unlock()
+		// Signal completion and update full cache.
+		c.cache.replace(cache)
+		c.done <- struct{}{}
 	}()
 
 	pools, err := getPools(c.Pools)
@@ -178,9 +167,9 @@ func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
 
 // sendCached values that do not appear in the current cacheIndex.
 func (c *ZFSCollector) sendCached(ch chan<- prometheus.Metric, cacheIndex map[string]struct{}) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	for name, metric := range c.cache {
+	c.cache.RLock()
+	defer c.cache.RUnlock()
+	for name, metric := range c.cache.cache {
 		if _, ok := cacheIndex[name]; ok {
 			continue
 		}
@@ -190,13 +179,13 @@ func (c *ZFSCollector) sendCached(ch chan<- prometheus.Metric, cacheIndex map[st
 
 func NewZFSCollector(deadline time.Duration, pools []string) (*ZFSCollector, error) {
 	sort.Strings(pools)
-	done := make(chan struct{})
-	close(done)
+	done := make(chan struct{}, 1)
+	done <- struct{}{}
 	return &ZFSCollector{
 		Deadline:   deadline,
 		Pools:      pools,
 		Collectors: collectorStates,
-		cache:      make(map[string]prometheus.Metric),
+		cache:      newMetricCache(),
 		done:       done,
 	}, nil
 }
@@ -255,9 +244,14 @@ func execute(ctx context.Context, name string, collector Collector, ch chan<- me
 	} else {
 		select {
 		case <-ctx.Done():
+			err = ctx.Err()
+		default:
+			err = nil
+		}
+		if err != nil && err != context.Canceled {
 			log.Warnf("DELAYED: %s collector completed after %fs: %s", name, duration.Seconds(), ctx.Err())
 			success = 0
-		default:
+		} else {
 			log.Debugf("OK: %s collector succeeded after %fs.", name, duration.Seconds())
 			success = 1
 		}
