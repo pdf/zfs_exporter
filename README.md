@@ -4,7 +4,7 @@ Prometheus exporter for ZFS (pools, filesystems, snapshots and volumes). Other i
 
 - __Pool selection__ - allow the user to select which pools are collected
 - __Multiple collectors__ - allow the user to select which data types are collected (pools, filesystems, snapshots and volumes)
-- __Collection deadline and caching__ - if the collection duration exceeds the configured deadline, cached data from the last run will be returned for any metrics that have not yet been collected, and the current collection run will continue in the background.  Collections will not run concurrently, so that when a system is running slowly, we don't compound the problem - if and existing collection is still running, cached data will be returned.
+- __Collection deadline and caching__ - if the collection duration exceeds the configured deadline, cached data from the last run will be returned for any metrics that have not yet been collected, and the current collection run will continue in the background.  Collections will not run concurrently, so that when a system is running slowly, we don't compound the problem - if an existing collection is still running, cached data will be returned.
 
 ## Installation
 
