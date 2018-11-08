@@ -1,6 +1,6 @@
 # ZFS Exporter
 
-Prometheus exporter for ZFS (pools, filesystems, snapshots and volumes). Other implementations exist, however performance can be quite variable, producing occasional timeouts (and associated alerts). This exporter was build with a few features aimed at allowing users to avoid collecting more than they need to, and to ensure timeouts cannot occur, but that we eventually get useful data:
+Prometheus exporter for ZFS (pools, filesystems, snapshots and volumes). Other implementations exist, however performance can be quite variable, producing occasional timeouts (and associated alerts). This exporter was built with a few features aimed at allowing users to avoid collecting more than they need to, and to ensure timeouts cannot occur, but that we eventually return useful data:
 
 - __Pool selection__ - allow the user to select which pools are collected
 - __Multiple collectors__ - allow the user to select which data types are collected (pools, filesystems, snapshots and volumes)
