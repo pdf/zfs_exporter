@@ -77,12 +77,6 @@ func (c *ZFSCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements the prometheus.Collector interface.
 func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
-	select {
-	case <-c.done:
-	default:
-		c.sendCached(ch, make(map[string]struct{}))
-		return
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), c.Deadline)
 	defer cancel()
 
@@ -180,7 +174,6 @@ func (c *ZFSCollector) sendCached(ch chan<- prometheus.Metric, cacheIndex map[st
 func NewZFSCollector(deadline time.Duration, pools []string) (*ZFSCollector, error) {
 	sort.Strings(pools)
 	done := make(chan struct{}, 1)
-	done <- struct{}{}
 	return &ZFSCollector{
 		Deadline:   deadline,
 		Pools:      pools,
