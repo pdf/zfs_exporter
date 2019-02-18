@@ -66,7 +66,7 @@ type ZFSCollector struct {
 	Pools      []string
 	Collectors map[string]State
 	cache      *metricCache
-	done       chan struct{}
+	ready      chan struct{}
 }
 
 // Describe implements the prometheus.Collector interface.
@@ -78,7 +78,7 @@ func (c *ZFSCollector) Describe(ch chan<- *prometheus.Desc) {
 // Collect implements the prometheus.Collector interface.
 func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
 	select {
-	case <-c.done:
+	case <-c.ready:
 	default:
 		c.sendCached(ch, make(map[string]struct{}))
 		return
@@ -93,6 +93,7 @@ func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(c.Collectors))
 	// Synchonize after timeout event, ensuring no writers are still active when we return control.
 	timeout := make(chan struct{})
+	done := make(chan struct{})
 	timeoutMutex := sync.Mutex{}
 
 	// Upon exceeding deadline, send cached data for any metrics that have not already been reported.
@@ -132,7 +133,9 @@ func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
 		}
 		// Signal completion and update full cache.
 		c.cache.replace(cache)
-		c.done <- struct{}{}
+		close(done)
+		// Notify next collection that we're ready to collect again
+		c.ready <- struct{}{}
 	}()
 
 	pools, err := getPools(c.Pools)
@@ -161,7 +164,7 @@ func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
 	// Wait for either timeout or completion.
 	select {
 	case <-timeout:
-	case <-c.done:
+	case <-done:
 	}
 }
 
@@ -179,14 +182,14 @@ func (c *ZFSCollector) sendCached(ch chan<- prometheus.Metric, cacheIndex map[st
 
 func NewZFSCollector(deadline time.Duration, pools []string) (*ZFSCollector, error) {
 	sort.Strings(pools)
-	done := make(chan struct{}, 1)
-	done <- struct{}{}
+	ready := make(chan struct{}, 1)
+	ready <- struct{}{}
 	return &ZFSCollector{
 		Deadline:   deadline,
 		Pools:      pools,
 		Collectors: collectorStates,
 		cache:      newMetricCache(),
-		done:       done,
+		ready:      ready,
 	}, nil
 }
 
