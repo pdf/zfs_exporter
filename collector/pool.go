@@ -2,6 +2,7 @@ package collector
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/mistifyio/go-zfs"
 	"github.com/prometheus/client_golang/prometheus"
@@ -34,9 +35,9 @@ type poolCollector struct {
 	dedupRatio           desc
 }
 
-func (c *poolCollector) update(ch chan<- metric, pools []*zfs.Zpool) error {
+func (c *poolCollector) update(ch chan<- metric, pools []*zfs.Zpool, ignore []*regexp.Regexp) error {
 	for _, pool := range pools {
-		if err := c.updatePoolMetrics(ch, pool); err != nil {
+		if err := c.updatePoolMetrics(ch, pool, ignore); err != nil {
 			return err
 		}
 	}
@@ -44,7 +45,7 @@ func (c *poolCollector) update(ch chan<- metric, pools []*zfs.Zpool) error {
 	return nil
 }
 
-func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) error {
+func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool, ignore []*regexp.Regexp) error {
 	health, err := healthCodeFromString(pool.Health)
 	if err != nil {
 		return err

@@ -22,35 +22,26 @@ go get -u github.com/pdf/zfs_exporter
 usage: zfs_exporter [<flags>]
 
 Flags:
-  -h, --help              Show context-sensitive help (also try --help-long and
-                          --help-man).
-      --collector.dataset-filesystem  
-                          Enable the dataset-filesystem collector (default:
-                          enabled)
-      --collector.dataset-snapshot  
-                          Enable the dataset-snapshot collector (default:
-                          disabled)
-      --collector.dataset-volume  
-                          Enable the dataset-volume collector (default: enabled)
-      --collector.pool    Enable the pool collector (default: enabled)
-      --web.listen-address=":9134"  
-                          Address on which to expose metrics and web interface.
-      --web.telemetry-path="/metrics"  
-                          Path under which to expose metrics.
-      --deadline=8s       Maximum duration that a collection should run before
-                          returning cached data. Should be set to a value
-                          shorter than your scrape timeout duration. The current
-                          collection run will continue and update the cache when
-                          complete (default: 8s)
-      --pool=POOL ...     Name of the pool(s) to collect, repeat for multiple
-                          pools (default: all pools).
-      --log.level="info"  Only log messages with the given severity or above.
-                          Valid levels: [debug, info, warn, error, fatal]
-      --log.format="logger:stderr"  
-                          Set the log target and format. Example:
-                          "logger:syslog?appname=bob&local=7" or
-                          "logger:stdout?json=true"
-      --version           Show application version.
+  -h, --help               Show context-sensitive help (also try --help-long and --help-man).
+      --collector.dataset-filesystem
+                           Enable the dataset-filesystem collector (default: enabled)
+      --collector.dataset-snapshot
+                           Enable the dataset-snapshot collector (default: disabled)
+      --collector.dataset-volume
+                           Enable the dataset-volume collector (default: enabled)
+      --collector.pool     Enable the pool collector (default: enabled)
+      --web.listen-address=":9134"
+                           Address on which to expose metrics and web interface.
+      --web.telemetry-path="/metrics"
+                           Path under which to expose metrics.
+      --deadline=8s        Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your
+                           scrape timeout duration. The current collection run will continue and update the cache when complete (default: 8s)
+      --pool=POOL ...      Name of the pool(s) to collect, repeat for multiple pools (default: all pools).
+      --ignore=IGNORE ...  Regex to match datasets/volumes to ignore
+      --log.level="info"   Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]
+      --log.format="logger:stderr"
+                           Set the log target and format. Example: "logger:syslog?appname=bob&local=7" or "logger:stdout?json=true"
+      --version            Show application version.
 ```
 
 Collectors that are enabled by default can be negated by prefixing the flag with `--no-*`, ie:

@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -48,7 +49,7 @@ type State struct {
 }
 
 type Collector interface {
-	update(ch chan<- metric, pools []*zfs.Zpool) error
+	update(ch chan<- metric, pools []*zfs.Zpool, ignore []*regexp.Regexp) error
 }
 
 type metric struct {
@@ -64,6 +65,7 @@ type desc struct {
 type ZFSCollector struct {
 	Deadline   time.Duration
 	Pools      []string
+	Ignore     []*regexp.Regexp
 	Collectors map[string]State
 	cache      *metricCache
 	ready      chan struct{}
@@ -86,6 +88,7 @@ func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
 	ctx, cancel := context.WithTimeout(context.Background(), c.Deadline)
 	defer cancel()
 
+	ignore := c.Ignore
 	cache := newMetricCache()
 	proxy := make(chan metric)
 	// Synchronize on collector completion.
@@ -156,7 +159,7 @@ func (c *ZFSCollector) Collect(ch chan<- prometheus.Metric) {
 			continue
 		}
 		go func(name string, collector Collector) {
-			execute(ctx, name, collector, proxy, pools)
+			execute(ctx, name, collector, proxy, pools, ignore)
 			wg.Done()
 		}(name, collector)
 	}
@@ -180,13 +183,14 @@ func (c *ZFSCollector) sendCached(ch chan<- prometheus.Metric, cacheIndex map[st
 	}
 }
 
-func NewZFSCollector(deadline time.Duration, pools []string) (*ZFSCollector, error) {
+func NewZFSCollector(deadline time.Duration, pools []string, ignore []*regexp.Regexp) (*ZFSCollector, error) {
 	sort.Strings(pools)
 	ready := make(chan struct{}, 1)
 	ready <- struct{}{}
 	return &ZFSCollector{
 		Deadline:   deadline,
 		Pools:      pools,
+		Ignore:     ignore,
 		Collectors: collectorStates,
 		cache:      newMetricCache(),
 		ready:      ready,
@@ -235,9 +239,9 @@ func getPools(pools []string) ([]*zfs.Zpool, error) {
 	return zpools, nil
 }
 
-func execute(ctx context.Context, name string, collector Collector, ch chan<- metric, pools []*zfs.Zpool) {
+func execute(ctx context.Context, name string, collector Collector, ch chan<- metric, pools []*zfs.Zpool, ignore []*regexp.Regexp) {
 	begin := time.Now()
-	err := collector.update(ch, pools)
+	err := collector.update(ch, pools, ignore)
 	duration := time.Since(begin)
 	var success float64
 

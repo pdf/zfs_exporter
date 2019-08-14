@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/pdf/zfs_exporter/collector"
 
@@ -53,6 +54,7 @@ func main() {
 		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 		deadline      = kingpin.Flag("deadline", "Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your scrape timeout duration. The current collection run will continue and update the cache when complete (default: 8s)").Default("8s").Duration()
 		pools         = kingpin.Flag("pool", "Name of the pool(s) to collect, repeat for multiple pools (default: all pools).").Strings()
+		ignore        = kingpin.Flag("ignore", "Regex to match datasets/volumes to ignore").Strings()
 	)
 
 	log.AddFlags(kingpin.CommandLine)
@@ -63,7 +65,16 @@ func main() {
 	log.Infoln("Starting zfs_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	c, err := collector.NewZFSCollector(*deadline, *pools)
+	regexes := make([]*regexp.Regexp, len(*ignore))
+	for i, s := range *ignore {
+		regex, err := regexp.Compile(s)
+		if err != nil {
+			log.Fatalf("Couldn't parse regex: %s: ", regex, err)
+		}
+		regexes[i] = regex
+	}
+
+	c, err := collector.NewZFSCollector(*deadline, *pools, regexes)
 	if err != nil {
 		log.Fatalf("Couldn't create collector: %s", err)
 	}
@@ -81,6 +92,11 @@ func main() {
 		if *c.Enabled {
 			log.Infof(" - %s", n)
 		}
+	}
+
+	log.Infof("Ignoring datasets prefixed with:")
+	for _, i := range c.Ignore {
+		log.Infof(" - %s", i)
 	}
 
 	http.HandleFunc(*metricsPath, handler(c))

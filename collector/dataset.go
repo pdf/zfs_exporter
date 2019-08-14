@@ -2,9 +2,9 @@ package collector
 
 import (
 	"fmt"
-
-	zfs "github.com/mistifyio/go-zfs"
+	"github.com/mistifyio/go-zfs"
 	"github.com/prometheus/client_golang/prometheus"
+	"regexp"
 )
 
 func init() {
@@ -25,9 +25,9 @@ type datasetCollector struct {
 	referencedBytes    desc
 }
 
-func (c *datasetCollector) update(ch chan<- metric, pools []*zfs.Zpool) error {
+func (c *datasetCollector) update(ch chan<- metric, pools []*zfs.Zpool, ignore []*regexp.Regexp) error {
 	for _, pool := range pools {
-		if err := c.updatePoolMetrics(ch, pool); err != nil {
+		if err := c.updatePoolMetrics(ch, pool, ignore); err != nil {
 			return err
 		}
 	}
@@ -35,7 +35,7 @@ func (c *datasetCollector) update(ch chan<- metric, pools []*zfs.Zpool) error {
 	return nil
 }
 
-func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) error {
+func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool, ignore []*regexp.Regexp) error {
 	var (
 		datasets []*zfs.Dataset
 		err      error
@@ -53,6 +53,10 @@ func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) 
 	}
 
 	for _, dataset := range datasets {
+		// Skip the ignored datasets
+		if matchesAny(ignore, dataset.Name) {
+			continue
+		}
 		if err = c.updateDatasetMetrics(ch, pool, dataset); err != nil {
 			return err
 		}
@@ -268,4 +272,13 @@ func newSnapshotCollector() (Collector, error) {
 
 func newVolumeCollector() (Collector, error) {
 	return newDatasetCollector(zfs.DatasetVolume)
+}
+
+func matchesAny(prefixes []*regexp.Regexp, str string) bool {
+	for _, regex := range prefixes {
+		if regex.MatchString(str) {
+			return true
+		}
+	}
+	return false
 }
