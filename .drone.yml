@@ -1,0 +1,39 @@
+---
+kind: pipeline
+name: default
+
+steps:
+- name: build
+  pull: always
+  image: spritsail/docker-build
+  settings:
+    repo: frebib/zfs-exporter
+
+- name: test
+  pull: always
+  image: spritsail/docker-test
+  settings:
+    curl: :9134
+    repo: frebib/zfs-exporter
+    delay: 1
+
+- name: publish
+  pull: always
+  image: spritsail/docker-publish
+  settings:
+    repo: frebib/zfs-exporter
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    branch:
+    - master
+    event:
+    - push
+
+---
+kind: signature
+hmac: d60a9674fad32a33698368debf33f9769e2822a51854543a06e739526aaa68da
+
+...
