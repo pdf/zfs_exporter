@@ -1,51 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/pdf/zfs_exporter/collector"
 
+	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
-
-func init() {
-	prometheus.MustRegister(version.NewCollector("zfs_exporter"))
-}
-
-func handler(c *collector.ZFSCollector) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		registry := prometheus.NewRegistry()
-		if err := registry.Register(c); err != nil {
-			serr := fmt.Sprintf("Couldn't register collector: %s", err)
-			log.Errorln(serr)
-			w.WriteHeader(http.StatusInternalServerError)
-			if _, err = w.Write([]byte(serr)); err != nil {
-				log.Warnln(`Couldn't write response:`, err)
-			}
-			return
-		}
-
-		gatherers := prometheus.Gatherers{
-			prometheus.DefaultGatherer,
-			registry,
-		}
-
-		h := promhttp.InstrumentMetricHandler(
-			registry,
-			promhttp.HandlerFor(gatherers,
-				promhttp.HandlerOpts{
-					ErrorLog:      log.NewErrorLogger(),
-					ErrorHandling: promhttp.ContinueOnError,
-				}),
-		)
-		h.ServeHTTP(w, r)
-	}
-}
 
 func main() {
 	var (
@@ -55,35 +24,44 @@ func main() {
 		pools         = kingpin.Flag("pool", "Name of the pool(s) to collect, repeat for multiple pools (default: all pools).").Strings()
 	)
 
-	log.AddFlags(kingpin.CommandLine)
+	promlogConfig := &promlog.Config{}
+	flag.AddFlags(kingpin.CommandLine, promlogConfig)
 	kingpin.Version(version.Print("zfs_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
+	logger := promlog.New(promlogConfig)
 
-	log.Infoln("Starting zfs_exporter", version.Info())
-	log.Infoln("Build context", version.BuildContext())
+	_ = level.Info(logger).Log("msg", "Starting zfs_exporter", "version", version.Info())
+	_ = level.Info(logger).Log("msg", "Build context", "context", version.BuildContext())
 
-	c, err := collector.NewZFSCollector(*deadline, *pools)
+	c, err := collector.NewZFS(collector.ZFSConfig{
+		Deadline: *deadline,
+		Pools:    *pools,
+		Logger:   logger,
+	})
 	if err != nil {
-		log.Fatalf("Couldn't create collector: %s", err)
+		_ = level.Error(logger).Log("msg", "Error creating an exporter", "err", err)
+		os.Exit(1)
 	}
 
-	log.Infof("Enabling pools:")
-	for _, p := range c.Pools {
-		log.Infof(" - %s", p)
-	}
-	if len(c.Pools) == 0 {
-		log.Infof(" - (all)")
+	prometheus.MustRegister(c)
+	prometheus.MustRegister(version.NewCollector("zfs_exporter"))
+
+	if len(c.Pools) > 0 {
+		_ = level.Info(logger).Log("msg", "Enabling pools", "pools", strings.Join(c.Pools, ", "))
+	} else {
+		_ = level.Info(logger).Log("msg", "Enabling pools", "pools", "(all)")
 	}
 
-	log.Infof("Enabling collectors:")
+	collectorNames := make([]string, 0, len(c.Collectors))
 	for n, c := range c.Collectors {
 		if *c.Enabled {
-			log.Infof(" - %s", n)
+			collectorNames = append(collectorNames, n)
 		}
 	}
+	_ = level.Info(logger).Log("msg", "Enabling collectors", "collectors", strings.Join(collectorNames, ", "))
 
-	http.HandleFunc(*metricsPath, handler(c))
+	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_, err = w.Write([]byte(`<html>
 			<head><title>ZFS Exporter</title></head>
@@ -93,13 +71,14 @@ func main() {
 			</body>
 			</html>`))
 		if err != nil {
-			log.Errorln(err)
+			_ = level.Error(logger).Log("msg", "Error writing response", "err", err)
 		}
 	})
 
-	log.Infoln("Listening on", *listenAddress)
+	_ = level.Info(logger).Log("msg", "Listening on address", "address", *listenAddress)
 	err = http.ListenAndServe(*listenAddress, nil)
 	if err != nil {
-		log.Fatal(err)
+		_ = level.Error(logger).Log("msg", "Error starting HTTP server", "err", err)
+		os.Exit(1)
 	}
 }

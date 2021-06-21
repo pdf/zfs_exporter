@@ -1,0 +1,114 @@
+# This is a basic workflow to help you get started with Actions
+name: Release
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: ["master"]
+
+env:
+  PARALLELISM: 3
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "release"
+  release:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v2
+        with:
+          # Fetch all versions for tag/changelog generation
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - name: Install promu
+        id: make_promu
+        run: |
+          make promu
+
+      - name: Calculate Version
+        id: calculate_version
+        uses: mathieudutour/github-tag-action@v4.5
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dry_run: true
+
+      - name: Update Version
+        id: update_version
+        env:
+          NEW_VERSION: ${{ steps.calculate_version.outputs.new_version }}
+        run: |
+          echo "${NEW_VERSION}" > VERSION
+
+      - name: Update Changelog
+        id: update_changelog
+        env:
+          CHANGELOG: ${{ steps.calculate_version.outputs.changelog }}
+        run: |
+          mv CHANGELOG.md _CHANGELOG.md || touch _CHANGELOG.md
+          echo "${CHANGELOG}" > CHANGELOG.md
+          cat _CHANGELOG.md >> CHANGELOG.md
+          rm -f _CHANGELOG.md
+
+      - name: Commit Changes
+        id: commit_changes
+        uses: EndBug/add-and-commit@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          add: VERSION CHANGELOG.md
+          message: |
+            chore(build): Releasing ${{ steps.calculate_version.outputs.new_tag }}
+
+      - name: Commit Tag
+        id: commit_tag
+        uses: mathieudutour/github-tag-action@v4.5
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        id: build
+        env:
+          PREFIX: .build/linux-amd64
+        run: |
+          make
+
+      - name: Crossbuild
+      - id: crossbuild
+        run: |
+          promu crossbuild --parallelism $PARALLELISM --parallelism-thread 0
+          promu crossbuild --parallelism $PARALLELISM --parallelism-thread 0 tarballs
+          promu checksum .tarballs
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.calculate_version.outputs.new_tag }}
+          release_name: Release ${{ steps.calculate_version.outputs.new_tag }}
+          body: |
+            Changes in this release:
+            ${{ steps.calculate_version.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        id: upload_release_assets
+        uses: AButler/upload-release-assets@v2.0
+        with:
+          files: ".tarballs/*"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          release-tag: ${{ steps.calculate_version.outputs.new_tag }}
