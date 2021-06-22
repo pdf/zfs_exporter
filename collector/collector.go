@@ -43,7 +43,7 @@ type State struct {
 }
 
 type Collector interface {
-	update(ch chan<- metric, pools []*zfs.Zpool) error
+	update(ch chan<- metric, pools []*zfs.Zpool, excludes regexpCollection) error
 }
 
 type metric struct {

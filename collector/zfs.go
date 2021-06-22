@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"regexp"
 	"sort"
 	"sync"
 	"time"
@@ -12,12 +13,27 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+type regexpCollection []*regexp.Regexp
+
+func (c regexpCollection) MatchString(input string) bool {
+	for _, r := range c {
+		if r.MatchString(input) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// ZFSConfig configures a ZFS collector
 type ZFSConfig struct {
 	Deadline time.Duration
 	Pools    []string
+	Excludes []string
 	Logger   log.Logger
 }
 
+// ZFS collector
 type ZFS struct {
 	Pools      []string
 	Collectors map[string]State
@@ -25,6 +41,7 @@ type ZFS struct {
 	cache      *metricCache
 	ready      chan struct{}
 	logger     log.Logger
+	excludes   regexpCollection
 }
 
 // Describe implements the prometheus.Collector interface.
@@ -56,16 +73,14 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 
 	// Upon exceeding deadline, send cached data for any metrics that have not already been reported.
 	go func() {
-		select {
-		case <-ctx.Done():
-			if err := ctx.Err(); err != nil && err != context.Canceled {
-				timeoutMutex.Lock()
-				c.cache.merge(cache)
-				cacheIndex := cache.index()
-				c.sendCached(ch, cacheIndex)
-				close(timeout) // assert timeout for flow control in other goroutines
-				timeoutMutex.Unlock()
-			}
+		<-ctx.Done()
+		if err := ctx.Err(); err != nil && err != context.Canceled {
+			timeoutMutex.Lock()
+			c.cache.merge(cache)
+			cacheIndex := cache.index()
+			c.sendCached(ch, cacheIndex)
+			close(timeout) // assert timeout for flow control in other goroutines
+			timeoutMutex.Unlock()
 		}
 	}()
 
@@ -164,7 +179,7 @@ func (c *ZFS) getPools(pools []string) ([]*zfs.Zpool, error) {
 
 func (c *ZFS) execute(ctx context.Context, name string, collector Collector, ch chan<- metric, pools []*zfs.Zpool) {
 	begin := time.Now()
-	err := collector.update(ch, pools)
+	err := collector.update(ch, pools, c.excludes)
 	duration := time.Since(begin)
 	var success float64
 
@@ -196,14 +211,21 @@ func (c *ZFS) execute(ctx context.Context, name string, collector Collector, ch 
 	}
 }
 
+// NewZFS instantiates a ZFS collector with the provided ZFSConfig
 func NewZFS(config ZFSConfig) (*ZFS, error) {
 	sort.Strings(config.Pools)
+	sort.Strings(config.Excludes)
+	excludes := make(regexpCollection, len(config.Excludes))
+	for i, v := range config.Excludes {
+		excludes[i] = regexp.MustCompile(v)
+	}
 	ready := make(chan struct{}, 1)
 	ready <- struct{}{}
 	return &ZFS{
 		deadline:   config.Deadline,
 		Pools:      config.Pools,
 		Collectors: collectorStates,
+		excludes:   excludes,
 		cache:      newMetricCache(),
 		ready:      ready,
 		logger:     config.Logger,

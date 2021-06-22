@@ -34,7 +34,7 @@ type poolCollector struct {
 	dedupRatio           desc
 }
 
-func (c *poolCollector) update(ch chan<- metric, pools []*zfs.Zpool) error {
+func (c *poolCollector) update(ch chan<- metric, pools []*zfs.Zpool, excludes regexpCollection) error {
 	for _, pool := range pools {
 		if err := c.updatePoolMetrics(ch, pool); err != nil {
 			return err

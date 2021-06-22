@@ -25,9 +25,9 @@ type datasetCollector struct {
 	referencedBytes    desc
 }
 
-func (c *datasetCollector) update(ch chan<- metric, pools []*zfs.Zpool) error {
+func (c *datasetCollector) update(ch chan<- metric, pools []*zfs.Zpool, excludes regexpCollection) error {
 	for _, pool := range pools {
-		if err := c.updatePoolMetrics(ch, pool); err != nil {
+		if err := c.updatePoolMetrics(ch, pool, excludes); err != nil {
 			return err
 		}
 	}
@@ -35,7 +35,7 @@ func (c *datasetCollector) update(ch chan<- metric, pools []*zfs.Zpool) error {
 	return nil
 }
 
-func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) error {
+func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool, excludes regexpCollection) error {
 	var (
 		datasets []*zfs.Dataset
 		err      error
@@ -53,6 +53,9 @@ func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) 
 	}
 
 	for _, dataset := range datasets {
+		if excludes.MatchString(dataset.Name) {
+			continue
+		}
 		if err = c.updateDatasetMetrics(ch, pool, dataset); err != nil {
 			return err
 		}

@@ -22,6 +22,7 @@ func main() {
 		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 		deadline      = kingpin.Flag("deadline", "Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your scrape timeout duration. The current collection run will continue and update the cache when complete (default: 8s)").Default("8s").Duration()
 		pools         = kingpin.Flag("pool", "Name of the pool(s) to collect, repeat for multiple pools (default: all pools).").Strings()
+		excludes      = kingpin.Flag("exclude", "Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.").Strings()
 	)
 
 	promlogConfig := &promlog.Config{}
@@ -37,6 +38,7 @@ func main() {
 	c, err := collector.NewZFS(collector.ZFSConfig{
 		Deadline: *deadline,
 		Pools:    *pools,
+		Excludes: *excludes,
 		Logger:   logger,
 	})
 	if err != nil {

@@ -22,35 +22,28 @@ go get -u github.com/pdf/zfs_exporter
 usage: zfs_exporter [<flags>]
 
 Flags:
-  -h, --help              Show context-sensitive help (also try --help-long and
-                          --help-man).
+  -h, --help                 Show context-sensitive help (also try --help-long and --help-man).
       --collector.dataset-filesystem  
-                          Enable the dataset-filesystem collector (default:
-                          enabled)
+                             Enable the dataset-filesystem collector (default: enabled)
       --collector.dataset-snapshot  
-                          Enable the dataset-snapshot collector (default:
-                          disabled)
+                             Enable the dataset-snapshot collector (default: disabled)
       --collector.dataset-volume  
-                          Enable the dataset-volume collector (default: enabled)
-      --collector.pool    Enable the pool collector (default: enabled)
+                             Enable the dataset-volume collector (default: enabled)
+      --collector.pool       Enable the pool collector (default: enabled)
       --web.listen-address=":9134"  
-                          Address on which to expose metrics and web interface.
+                             Address on which to expose metrics and web interface.
       --web.telemetry-path="/metrics"  
-                          Path under which to expose metrics.
-      --deadline=8s       Maximum duration that a collection should run before
-                          returning cached data. Should be set to a value
-                          shorter than your scrape timeout duration. The current
-                          collection run will continue and update the cache when
-                          complete (default: 8s)
-      --pool=POOL ...     Name of the pool(s) to collect, repeat for multiple
-                          pools (default: all pools).
-      --log.level="info"  Only log messages with the given severity or above.
-                          Valid levels: [debug, info, warn, error, fatal]
-      --log.format="logger:stderr"  
-                          Set the log target and format. Example:
-                          "logger:syslog?appname=bob&local=7" or
-                          "logger:stdout?json=true"
-      --version           Show application version.
+                             Path under which to expose metrics.
+      --deadline=8s          Maximum duration that a collection should run before returning cached data. Should
+                             be set to a value shorter than your scrape timeout duration. The current
+                             collection run will continue and update the cache when complete (default: 8s)
+      --pool=POOL ...        Name of the pool(s) to collect, repeat for multiple pools (default: all pools).
+      --exclude=EXCLUDE ...  Exclude datasets/snapshots/volumes that match the provided regex (e.g.
+                             '^rpool/docker/'), may be specified multiple times.
+      --log.level=info       Only log messages with the given severity or above. One of: [debug, info, warn,
+                             error]
+      --log.format=logfmt    Output format of log messages. One of: [logfmt, json]
+      --version              Show application version.
 ```
 
 Collectors that are enabled by default can be negated by prefixing the flag with `--no-*`, ie:
