@@ -85,7 +85,7 @@ jobs:
           make
 
       - name: Crossbuild
-      - id: crossbuild
+        id: crossbuild
         run: |
           promu crossbuild --parallelism $PARALLELISM --parallelism-thread 0
           promu crossbuild --parallelism $PARALLELISM --parallelism-thread 0 tarballs
