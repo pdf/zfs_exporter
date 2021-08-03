@@ -1,3 +1,13 @@
+## [1.0.1](https://github.com/pdf/zfs_exporter/compare/v1.0.0...v1.0.1) (2021-08-03)
+
+
+### Bug Fixes
+
+* fix copy and paste errors when accessing dataset properties ([c0fc6b2](https://github.com/pdf/zfs_exporter/commit/c0fc6b2))
+
+
+
+
 # [1.0.0](https://github.com/pdf/zfs_exporter/compare/v0.0.3...v1.0.0) (2021-06-22)
 
 
