@@ -126,7 +126,7 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool *zfs.Zpoo
 			prometheus: prometheus.MustNewConstMetric(
 				c.usedByDatasetBytes.prometheus,
 				prometheus.GaugeValue,
-				float64(dataset.Avail),
+				float64(dataset.Usedbydataset),
 				labels...,
 			),
 		}
@@ -140,7 +140,7 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool *zfs.Zpoo
 			prometheus: prometheus.MustNewConstMetric(
 				c.quotaBytes.prometheus,
 				prometheus.GaugeValue,
-				float64(dataset.Avail),
+				float64(dataset.Quota),
 				labels...,
 			),
 		}
@@ -150,7 +150,7 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool *zfs.Zpoo
 			prometheus: prometheus.MustNewConstMetric(
 				c.volumeSizeBytes.prometheus,
 				prometheus.GaugeValue,
-				float64(dataset.Avail),
+				float64(dataset.Volsize),
 				labels...,
 			),
 		}
