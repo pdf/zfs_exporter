@@ -3,7 +3,7 @@ package collector
 import (
 	"fmt"
 
-	zfs "github.com/mistifyio/go-zfs"
+	"github.com/pdf/zfs_exporter/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

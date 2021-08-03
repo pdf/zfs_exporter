@@ -1,0 +1,1 @@
+This is based on a simplified version of https://github.com/mistifyio/go-zfs .
