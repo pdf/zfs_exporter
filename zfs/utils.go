@@ -12,7 +12,7 @@ func setString(field *string, value string) {
 
 func setUint(field *uint64, value string) error {
 	var v uint64
-	if value != "-" {
+	if value != "-" && value != "none" {
 		var err error
 		v, err = strconv.ParseUint(value, 10, 64)
 		if err != nil {
