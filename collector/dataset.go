@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	zfs "github.com/mistifyio/go-zfs"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 func init() {
@@ -13,16 +12,28 @@ func init() {
 	registerCollector(`dataset-volume`, defaultEnabled, newVolumeCollector)
 }
 
+const datasetSubsystem = `dataset`
+
+var datasetLabels = []string{
+	`name`,
+	`pool`,
+	`type`,
+}
+
 type datasetCollector struct {
-	kind               string
-	usedBytes          desc
+	kind string
+	// all datasets
+	logicalUsedBytes desc
+	referencedBytes  desc
+	usedBytes        desc
+	writtenBytes     desc
+	// volumes and filesystems only (i.e. no snapshots)
 	availableBytes     desc
-	writtenBytes       desc
-	volumeSizeBytes    desc
-	logicalUsedBytes   desc
 	usedByDatasetBytes desc
-	quotaBytes         desc
-	referencedBytes    desc
+	// filesystems only
+	quotaBytes desc
+	// volumes only
+	volumeSizeBytes desc
 }
 
 func (c *datasetCollector) update(ch chan<- metric, pools []*zfs.Zpool, excludes regexpCollection) error {
@@ -65,95 +76,65 @@ func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool, 
 }
 
 func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool *zfs.Zpool, dataset *zfs.Dataset) error {
-	labels := []string{dataset.Name, pool.Name, c.kind}
+	// match with datasetLabels
+	labelValues := []string{dataset.Name, pool.Name, c.kind}
 
 	// Metrics shared by all dataset types.
-	ch <- metric{
-		name: expandMetricName(c.usedBytes.name, labels...),
-		prometheus: prometheus.MustNewConstMetric(
-			c.usedBytes.prometheus,
-			prometheus.GaugeValue,
-			float64(dataset.Used),
-			labels...,
-		),
-	}
+	ch <- newMetric(
+		&c.logicalUsedBytes,
+		float64(dataset.Logicalused),
+		labelValues,
+	)
 
-	ch <- metric{
-		name: expandMetricName(c.writtenBytes.name, labels...),
-		prometheus: prometheus.MustNewConstMetric(
-			c.writtenBytes.prometheus,
-			prometheus.GaugeValue,
-			float64(dataset.Written),
-			labels...,
-		),
-	}
+	ch <- newMetric(
+		&c.referencedBytes,
+		float64(dataset.Referenced),
+		labelValues,
+	)
 
-	ch <- metric{
-		name: expandMetricName(c.logicalUsedBytes.name, labels...),
-		prometheus: prometheus.MustNewConstMetric(
-			c.logicalUsedBytes.prometheus,
-			prometheus.GaugeValue,
-			float64(dataset.Logicalused),
-			labels...,
-		),
-	}
+	ch <- newMetric(
+		&c.usedBytes,
+		float64(dataset.Used),
+		labelValues,
+	)
 
-	ch <- metric{
-		name: expandMetricName(c.referencedBytes.name, labels...),
-		prometheus: prometheus.MustNewConstMetric(
-			c.referencedBytes.prometheus,
-			prometheus.GaugeValue,
-			float64(dataset.Referenced),
-			labels...,
-		),
-	}
+	ch <- newMetric(
+		&c.writtenBytes,
+		float64(dataset.Written),
+		labelValues,
+	)
 
 	// Metrics shared by multiple dataset types.
 	switch c.kind {
 	case zfs.DatasetFilesystem, zfs.DatasetVolume:
-		ch <- metric{
-			name: expandMetricName(c.availableBytes.name, labels...),
-			prometheus: prometheus.MustNewConstMetric(
-				c.availableBytes.prometheus,
-				prometheus.GaugeValue,
-				float64(dataset.Avail),
-				labels...,
-			),
-		}
+		ch <- newMetric(
+			&c.availableBytes,
+			float64(dataset.Avail),
+			labelValues,
+		)
 
-		ch <- metric{
-			name: expandMetricName(c.usedByDatasetBytes.name, labels...),
-			prometheus: prometheus.MustNewConstMetric(
-				c.usedByDatasetBytes.prometheus,
-				prometheus.GaugeValue,
-				float64(dataset.Usedbydataset),
-				labels...,
-			),
-		}
+		ch <- newMetric(
+			&c.usedByDatasetBytes,
+			float64(dataset.Usedbydataset),
+			labelValues,
+		)
 	}
 
 	// Metrics specific to individual dataset types.
 	switch c.kind {
 	case zfs.DatasetFilesystem:
-		ch <- metric{
-			name: expandMetricName(c.quotaBytes.name, labels...),
-			prometheus: prometheus.MustNewConstMetric(
-				c.quotaBytes.prometheus,
-				prometheus.GaugeValue,
-				float64(dataset.Quota),
-				labels...,
-			),
-		}
+		ch <- newMetric(
+			&c.quotaBytes,
+			float64(dataset.Quota),
+			labelValues,
+		)
+
 	case zfs.DatasetVolume:
-		ch <- metric{
-			name: expandMetricName(c.volumeSizeBytes.name, labels...),
-			prometheus: prometheus.MustNewConstMetric(
-				c.volumeSizeBytes.prometheus,
-				prometheus.GaugeValue,
-				float64(dataset.Volsize),
-				labels...,
-			),
-		}
+		ch <- newMetric(
+			&c.volumeSizeBytes,
+			float64(dataset.Volsize),
+			labelValues,
+		)
 	}
 
 	return nil
@@ -166,98 +147,56 @@ func newDatasetCollector(kind string) (Collector, error) {
 		return nil, fmt.Errorf("unknown dataset type: %s", kind)
 	}
 
-	const subsystem = `dataset`
-
-	var (
-		labels = []string{
-			`name`,
-			`pool`,
-			`type`,
-		}
-		usedBytesName        = prometheus.BuildFQName(namespace, subsystem, `used_bytes`)
-		availableBytesName   = prometheus.BuildFQName(namespace, subsystem, `available_bytes`)
-		writtenBytesName     = prometheus.BuildFQName(namespace, subsystem, `written_bytes`)
-		volumeSizeBytesName  = prometheus.BuildFQName(namespace, subsystem, `volume_size_bytes`)
-		logicalUsedBytesName = prometheus.BuildFQName(namespace, subsystem, `logical_used_bytes`)
-		usedByDatasetBytes   = prometheus.BuildFQName(namespace, subsystem, `used_by_dataset_bytes`)
-		quotaBytesName       = prometheus.BuildFQName(namespace, subsystem, `quota_bytes`)
-		referencedBytesName  = prometheus.BuildFQName(namespace, subsystem, `referenced_bytes`)
-	)
-
 	return &datasetCollector{
 		kind: kind,
-		usedBytes: desc{
-			name: usedBytesName,
-			prometheus: prometheus.NewDesc(
-				usedBytesName,
-				`The amount of space in bytes consumed by this dataset and all its descendents.`,
-				labels,
-				nil,
-			),
-		},
-		availableBytes: desc{
-			name: availableBytesName,
-			prometheus: prometheus.NewDesc(
-				availableBytesName,
-				`The amount of space in bytes available to the dataset and all its children.`,
-				labels,
-				nil,
-			),
-		},
-		writtenBytes: desc{
-			name: writtenBytesName,
-			prometheus: prometheus.NewDesc(
-				writtenBytesName,
-				`The amount of referenced space in bytes written to this dataset since the previous snapshot.`,
-				labels,
-				nil,
-			),
-		},
-		volumeSizeBytes: desc{
-			name: volumeSizeBytesName,
-			prometheus: prometheus.NewDesc(
-				volumeSizeBytesName,
-				`The logical size of the volume in bytes.`,
-				labels,
-				nil,
-			),
-		},
-		logicalUsedBytes: desc{
-			name: logicalUsedBytesName,
-			prometheus: prometheus.NewDesc(
-				logicalUsedBytesName,
-				`The amount of space in bytes that is "logically" consumed by this dataset and all its descendents.`,
-				labels,
-				nil,
-			),
-		},
-		usedByDatasetBytes: desc{
-			name: usedByDatasetBytes,
-			prometheus: prometheus.NewDesc(
-				usedByDatasetBytes,
-				`The amount of space in bytes used by this dataset itself, which would be freed if the dataset were destroyed`,
-				labels,
-				nil,
-			),
-		},
-		quotaBytes: desc{
-			name: quotaBytesName,
-			prometheus: prometheus.NewDesc(
-				quotaBytesName,
-				`The amount of space in bytes this dataset and its descendents can consume.`,
-				labels,
-				nil,
-			),
-		},
-		referencedBytes: desc{
-			name: referencedBytesName,
-			prometheus: prometheus.NewDesc(
-				referencedBytesName,
-				`The amount of data in bytes that is accessible by this dataset, which may or may not be shared with other datasets in the pool.`,
-				labels,
-				nil,
-			),
-		},
+		availableBytes: newDesc(
+			datasetSubsystem,
+			`available_bytes`,
+			`The amount of space in bytes available to the dataset and all its children.`,
+			datasetLabels,
+		),
+		logicalUsedBytes: newDesc(
+			datasetSubsystem,
+			`logical_used_bytes`,
+			`The amount of space in bytes that is "logically" consumed by this dataset and all its descendents.`,
+			datasetLabels,
+		),
+		quotaBytes: newDesc(
+			datasetSubsystem,
+			`quota_bytes`,
+			`The amount of space in bytes this dataset and its descendents can consume.`,
+			datasetLabels,
+		),
+		referencedBytes: newDesc(
+			datasetSubsystem,
+			`referenced_bytes`,
+			`The amount of data in bytes that is accessible by this dataset, which may or may not be shared with other datasets in the pool.`,
+			datasetLabels,
+		),
+		usedByDatasetBytes: newDesc(
+			datasetSubsystem,
+			`used_by_dataset_bytes`,
+			`The amount of space in bytes used by this dataset itself, which would be freed if the dataset were destroyed`,
+			datasetLabels,
+		),
+		usedBytes: newDesc(
+			datasetSubsystem,
+			`used_bytes`,
+			`The amount of space in bytes consumed by this dataset and all its descendents.`,
+			datasetLabels,
+		),
+		volumeSizeBytes: newDesc(
+			datasetSubsystem,
+			`volume_size_bytes`,
+			`The logical size of the volume in bytes.`,
+			datasetLabels,
+		),
+		writtenBytes: newDesc(
+			datasetSubsystem,
+			`written_bytes`,
+			`The amount of referenced space in bytes written to this dataset since the previous snapshot.`,
+			datasetLabels,
+		),
 	}, nil
 }
 

@@ -77,3 +77,28 @@ func registerCollector(collector string, isDefaultEnabled bool, factory factoryF
 func expandMetricName(prefix string, context ...string) string {
 	return strings.Join(append(context, prefix), `-`)
 }
+
+func newDesc(subsystem string, metric_name string, help_text string, labels []string) desc {
+	var name = prometheus.BuildFQName(namespace, subsystem, metric_name)
+	return desc{
+		name: name,
+		prometheus: prometheus.NewDesc(
+			name,
+			help_text,
+			labels,
+			nil,
+		),
+	}
+}
+
+func newMetric(metric_desc *desc, value float64, labels []string) metric {
+	return metric{
+		name: expandMetricName(metric_desc.name, labels...),
+		prometheus: prometheus.MustNewConstMetric(
+			metric_desc.prometheus,
+			prometheus.GaugeValue,
+			value,
+			labels...,
+		),
+	}
+}
