@@ -1,5 +1,10 @@
 package zfs
 
+import (
+	"strconv"
+	"strings"
+)
+
 // ZFS zpool states, which can indicate if a pool is online, offline,
 // degraded, etc.  More information regarding zpool states can be found here:
 // https://docs.oracle.com/cd/E19253-01/819-5461/gamno/index.html.
@@ -27,17 +32,27 @@ type Zpool struct {
 	DedupRatio    float64
 }
 
-// zpool is a helper function to wrap typical calls to zpool.
-func zpool(arg ...string) ([][]string, error) {
-	c := command{Command: "zpool"}
-	return c.Run(arg...)
+// List of Zpool properties to retrieve from zpool list command on a non-Solaris platform
+var zpoolPropList = []string{
+	"name",
+	"health",
+	"allocated",
+	"size",
+	"free",
+	"readonly",
+	"dedupratio",
+	"fragmentation",
+	"freeing",
+	"leaked",
 }
+var zpoolPropListOptions = strings.Join(zpoolPropList, ",")
 
 // GetZpool retrieves a single ZFS zpool by name.
 func GetZpool(name string) (*Zpool, error) {
-	args := zpoolArgs
+	args := []string{"get", "-p", zpoolPropListOptions}
 	args = append(args, name)
-	out, err := zpool(args...)
+	c := command{Command: "zpool"}
+	out, err := c.Run(args...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +73,8 @@ func GetZpool(name string) (*Zpool, error) {
 // ListZpools list all ZFS zpools accessible on the current system.
 func ListZpools() ([]*Zpool, error) {
 	args := []string{"list", "-Ho", "name"}
-	out, err := zpool(args...)
+	c := command{Command: "zpool"}
+	out, err := c.Run(args...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,4 +89,41 @@ func ListZpools() ([]*Zpool, error) {
 		pools = append(pools, z)
 	}
 	return pools, nil
+}
+
+func (z *Zpool) parseLine(line []string) error {
+	prop := line[1]
+	val := line[2]
+
+	var err error
+
+	switch prop {
+	case "name":
+		setString(&z.Name, val)
+	case "health":
+		setString(&z.Health, val)
+	case "allocated":
+		err = setUint(&z.Allocated, val)
+	case "size":
+		err = setUint(&z.Size, val)
+	case "free":
+		err = setUint(&z.Free, val)
+	case "fragmentation":
+		// Trim trailing "%" before parsing uint
+		i := strings.Index(val, "%")
+		if i < 0 {
+			i = len(val)
+		}
+		err = setUint(&z.Fragmentation, val[:i])
+	case "readonly":
+		z.ReadOnly = val == "on"
+	case "freeing":
+		err = setUint(&z.Freeing, val)
+	case "leaked":
+		err = setUint(&z.Leaked, val)
+	case "dedupratio":
+		// Trim trailing "x" before parsing float64
+		z.DedupRatio, err = strconv.ParseFloat(val[:len(val)-1], 64)
+	}
+	return err
 }
