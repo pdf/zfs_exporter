@@ -61,56 +61,56 @@ func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) err
 		readOnly = 1
 	}
 
-	ch <- newMetric(
-		&c.allocatedBytes,
+	ch <- newGaugeMetric(
+		c.allocatedBytes,
 		float64(pool.Allocated),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.dedupRatio,
+	ch <- newGaugeMetric(
+		c.dedupRatio,
 		pool.DedupRatio,
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.fragmentationPercent,
+	ch <- newGaugeMetric(
+		c.fragmentationPercent,
 		float64(pool.Fragmentation),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.freeBytes,
+	ch <- newGaugeMetric(
+		c.freeBytes,
 		float64(pool.Free),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.freeingBytes,
+	ch <- newGaugeMetric(
+		c.freeingBytes,
 		float64(pool.Freeing),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.health,
+	ch <- newGaugeMetric(
+		c.health,
 		float64(health),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.leakedBytes,
+	ch <- newGaugeMetric(
+		c.leakedBytes,
 		float64(pool.Leaked),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.readOnly,
+	ch <- newGaugeMetric(
+		c.readOnly,
 		readOnly,
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.sizeBytes,
+	ch <- newGaugeMetric(
+		c.sizeBytes,
 		float64(pool.Size),
 		labelValues,
 	)
@@ -120,7 +120,6 @@ func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) err
 
 func newPoolCollector() (Collector, error) {
 	return &poolCollector{
-
 		allocatedBytes: newDesc(
 			poolSubsystem,
 			`allocated_bytes`,

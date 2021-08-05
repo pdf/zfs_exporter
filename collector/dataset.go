@@ -80,26 +80,26 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool *zfs.Zpoo
 	labelValues := []string{dataset.Name, pool.Name, c.kind}
 
 	// Metrics shared by all dataset types.
-	ch <- newMetric(
-		&c.logicalUsedBytes,
+	ch <- newGaugeMetric(
+		c.logicalUsedBytes,
 		float64(dataset.Logicalused),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.referencedBytes,
+	ch <- newGaugeMetric(
+		c.referencedBytes,
 		float64(dataset.Referenced),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.usedBytes,
+	ch <- newGaugeMetric(
+		c.usedBytes,
 		float64(dataset.Used),
 		labelValues,
 	)
 
-	ch <- newMetric(
-		&c.writtenBytes,
+	ch <- newGaugeMetric(
+		c.writtenBytes,
 		float64(dataset.Written),
 		labelValues,
 	)
@@ -107,14 +107,14 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool *zfs.Zpoo
 	// Metrics shared by multiple dataset types.
 	switch c.kind {
 	case zfs.DatasetFilesystem, zfs.DatasetVolume:
-		ch <- newMetric(
-			&c.availableBytes,
+		ch <- newGaugeMetric(
+			c.availableBytes,
 			float64(dataset.Avail),
 			labelValues,
 		)
 
-		ch <- newMetric(
-			&c.usedByDatasetBytes,
+		ch <- newGaugeMetric(
+			c.usedByDatasetBytes,
 			float64(dataset.Usedbydataset),
 			labelValues,
 		)
@@ -123,15 +123,15 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool *zfs.Zpoo
 	// Metrics specific to individual dataset types.
 	switch c.kind {
 	case zfs.DatasetFilesystem:
-		ch <- newMetric(
-			&c.quotaBytes,
+		ch <- newGaugeMetric(
+			c.quotaBytes,
 			float64(dataset.Quota),
 			labelValues,
 		)
 
 	case zfs.DatasetVolume:
-		ch <- newMetric(
-			&c.volumeSizeBytes,
+		ch <- newGaugeMetric(
+			c.volumeSizeBytes,
 			float64(dataset.Volsize),
 			labelValues,
 		)

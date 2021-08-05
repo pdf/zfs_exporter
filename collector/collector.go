@@ -91,11 +91,11 @@ func newDesc(subsystem string, metric_name string, help_text string, labels []st
 	}
 }
 
-func newMetric(metric_desc *desc, value float64, labels []string) metric {
+func newGaugeMetric(metricDesc desc, value float64, labels []string) metric {
 	return metric{
-		name: expandMetricName(metric_desc.name, labels...),
+		name: expandMetricName(metricDesc.name, labels...),
 		prometheus: prometheus.MustNewConstMetric(
-			metric_desc.prometheus,
+			metricDesc.prometheus,
 			prometheus.GaugeValue,
 			value,
 			labels...,
