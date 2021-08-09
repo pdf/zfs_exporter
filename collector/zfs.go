@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/mistifyio/go-zfs"
+	"github.com/pdf/zfs_exporter/basic_zfs"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -153,31 +153,20 @@ func (c *ZFS) sendCached(ch chan<- prometheus.Metric, cacheIndex map[string]stru
 	}
 }
 
-func (c *ZFS) getPools(pools []string) ([]*zfs.Zpool, error) {
+func (c *ZFS) getPools(pools []string) ([]string, error) {
 	// Get all pools if not explicitly configured.
 	if len(pools) == 0 {
-		zpools, err := zfs.ListZpools()
+		pools, err := basic_zfs.ListPools()
 		if err != nil {
 			return nil, err
 		}
-		return zpools, nil
+		return pools, nil
 	}
 
-	// Configured pools may not exist, so append available pools as they're found, rather than allocating up front.
-	zpools := make([]*zfs.Zpool, 0)
-	for _, name := range pools {
-		pool, err := zfs.GetZpool(name)
-		if err != nil {
-			_ = level.Warn(c.logger).Log("msg", "Pool unavailable", "pool", name)
-			continue
-		}
-		zpools = append(zpools, pool)
-	}
-
-	return zpools, nil
+	return pools, nil
 }
 
-func (c *ZFS) execute(ctx context.Context, name string, collector Collector, ch chan<- metric, pools []*zfs.Zpool) {
+func (c *ZFS) execute(ctx context.Context, name string, collector Collector, ch chan<- metric, pools []string) {
 	begin := time.Now()
 	err := collector.update(ch, pools, c.excludes)
 	duration := time.Since(begin)

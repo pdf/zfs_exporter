@@ -37,9 +37,13 @@ const poolSubsystem = `pool`
 
 var poolLabels = []string{`pool`}
 
-func (c *poolCollector) update(ch chan<- metric, pools []*zfs.Zpool, excludes regexpCollection) error {
+func (c *poolCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
 	for _, pool := range pools {
-		if err := c.updatePoolMetrics(ch, pool); err != nil {
+		zpool, err := zfs.GetZpool(pool)
+		if err != nil {
+			return err
+		}
+		if err := c.updatePoolMetrics(ch, zpool); err != nil {
 			return err
 		}
 	}

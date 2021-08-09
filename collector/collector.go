@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mistifyio/go-zfs"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -43,7 +42,7 @@ type State struct {
 }
 
 type Collector interface {
-	update(ch chan<- metric, pools []*zfs.Zpool, excludes regexpCollection) error
+	update(ch chan<- metric, pools []string, excludes regexpCollection) error
 }
 
 type metric struct {
