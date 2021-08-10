@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+const (
+	ZpoolOnline   = "ONLINE"
+	ZpoolDegraded = "DEGRADED"
+	ZpoolFaulted  = "FAULTED"
+	ZpoolOffline  = "OFFLINE"
+	ZpoolUnavail  = "UNAVAIL"
+	ZpoolRemoved  = "REMOVED"
+)
+
 func ListPools() ([]string, error) {
 	out, err := exec.Command("zpool", "list", "-Hpo", "name").Output()
 	if err != nil {
