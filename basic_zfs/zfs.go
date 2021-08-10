@@ -21,10 +21,13 @@ func DatasetProperties(pool string, dsType string, dsProperties []string) ([][]s
 	}
 
 	output := string(outBytes)
-	lines := strings.Split(output, "\n") // NOTE: last line is empty
-	results := make([][]string, len(lines)-1)
-	for i, line := range lines[:len(lines)-1] {
-		results[i] = strings.Fields(line)
+	lines := strings.Split(output, "\n")
+	results := make([][]string, 0, len(lines))
+	for _, line := range lines {
+		// NOTE: last line is empty
+		if len(line) > 0 {
+			results = append(results, strings.Fields(line))
+		}
 	}
 	return results, nil
 }
