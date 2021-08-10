@@ -12,7 +12,25 @@ func init() {
 	registerCollector(`dataset-volume`, defaultEnabled, newVolumeCollector)
 }
 
-const datasetSubsystem = `dataset`
+type datasetCollector struct {
+	kind string
+	// all datasets
+	logicalReferencedBytes desc
+	logicalUsedBytes       desc
+	referencedBytes        desc
+	usedBytes              desc
+	writtenBytes           desc
+	// volumes and filesystems only (i.e. no snapshots)
+	availableBytes            desc
+	usedByChildrenBytes       desc
+	usedByDatasetBytes        desc
+	usedByRefreservationBytes desc
+	usedBySnapshotsBytes      desc
+	// filesystems only
+	quotaBytes desc
+	// volumes only
+	volumeSizeBytes desc
+}
 
 var datasetLabels = []string{
 	`name`,
@@ -40,25 +58,7 @@ var datasetProperties = []string{
 	"volsize",
 }
 
-type datasetCollector struct {
-	kind string
-	// all datasets
-	logicalReferencedBytes desc
-	logicalUsedBytes       desc
-	referencedBytes        desc
-	usedBytes              desc
-	writtenBytes           desc
-	// volumes and filesystems only (i.e. no snapshots)
-	availableBytes            desc
-	usedByChildrenBytes       desc
-	usedByDatasetBytes        desc
-	usedByRefreservationBytes desc
-	usedBySnapshotsBytes      desc
-	// filesystems only
-	quotaBytes desc
-	// volumes only
-	volumeSizeBytes desc
-}
+const datasetSubsystem = `dataset`
 
 func (c *datasetCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
 	for _, pool := range pools {

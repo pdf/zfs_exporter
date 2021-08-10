@@ -3,7 +3,7 @@ package collector
 import (
 	"fmt"
 
-	"github.com/mistifyio/go-zfs"
+	"github.com/pdf/zfs_exporter/basic_zfs"
 )
 
 func init() {
@@ -33,17 +33,30 @@ type poolCollector struct {
 	sizeBytes            desc
 }
 
-const poolSubsystem = `pool`
-
 var poolLabels = []string{`pool`}
 
+var poolProperties = []string{
+	"name", // NOTE: name should be first!
+	"allocated",
+	"dedupratio",
+	"fragmentation",
+	"free",
+	"freeing",
+	"health",
+	"leaked",
+	"readonly",
+	"size",
+}
+
+const poolSubsystem = `pool`
+
 func (c *poolCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
-	for _, pool := range pools {
-		zpool, err := zfs.GetZpool(pool)
-		if err != nil {
-			return err
-		}
-		if err := c.updatePoolMetrics(ch, zpool); err != nil {
+	poolsWithProperties, err := basic_zfs.PoolProperties(pools, poolProperties)
+	if err != nil {
+		return err
+	}
+	for _, poolProps := range poolsWithProperties {
+		if err := c.updatePoolMetrics(ch, poolProps); err != nil {
 			return err
 		}
 	}
@@ -51,50 +64,44 @@ func (c *poolCollector) update(ch chan<- metric, pools []string, excludes regexp
 	return nil
 }
 
-func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) error {
+func (c *poolCollector) updatePoolMetrics(ch chan<- metric, poolProps []string) error {
 	// match with poolLabels
-	labelValues := []string{pool.Name}
-
-	health, err := healthCodeFromString(pool.Health)
-	if err != nil {
-		return err
-	}
-
-	var readOnly float64
-	if pool.ReadOnly {
-		readOnly = 1
-	}
+	labelValues := []string{poolProps[0]}
 
 	ch <- newGaugeMetric(
 		c.allocatedBytes,
-		float64(pool.Allocated),
+		float64FromNumProp(poolProps[1]),
 		labelValues,
 	)
 
 	ch <- newGaugeMetric(
 		c.dedupRatio,
-		pool.DedupRatio,
+		float64FromNumProp(poolProps[2]),
 		labelValues,
 	)
 
 	ch <- newGaugeMetric(
 		c.fragmentationPercent,
-		float64(pool.Fragmentation),
+		float64FromNumProp(poolProps[3]),
 		labelValues,
 	)
 
 	ch <- newGaugeMetric(
 		c.freeBytes,
-		float64(pool.Free),
+		float64FromNumProp(poolProps[4]),
 		labelValues,
 	)
 
 	ch <- newGaugeMetric(
 		c.freeingBytes,
-		float64(pool.Freeing),
+		float64FromNumProp(poolProps[5]),
 		labelValues,
 	)
 
+	health, err := healthCodeFromString(poolProps[6])
+	if err != nil {
+		return err
+	}
 	ch <- newGaugeMetric(
 		c.health,
 		float64(health),
@@ -103,10 +110,14 @@ func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) err
 
 	ch <- newGaugeMetric(
 		c.leakedBytes,
-		float64(pool.Leaked),
+		float64FromNumProp(poolProps[7]),
 		labelValues,
 	)
 
+	readOnly, err := float64FromBoolProp(poolProps[8])
+	if err != nil {
+		return err
+	}
 	ch <- newGaugeMetric(
 		c.readOnly,
 		readOnly,
@@ -115,7 +126,7 @@ func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool *zfs.Zpool) err
 
 	ch <- newGaugeMetric(
 		c.sizeBytes,
-		float64(pool.Size),
+		float64FromNumProp(poolProps[9]),
 		labelValues,
 	)
 
@@ -163,7 +174,13 @@ func newPoolCollector() (Collector, error) {
 			poolSubsystem,
 			`health`,
 			fmt.Sprintf("Health status code for the pool [%d: %s, %d: %s, %d: %s, %d: %s, %d: %s, %d: %s].",
-				online, zfs.ZpoolOnline, degraded, zfs.ZpoolDegraded, faulted, zfs.ZpoolFaulted, offline, zfs.ZpoolOffline, unavail, zfs.ZpoolUnavail, removed, zfs.ZpoolRemoved),
+				online, basic_zfs.ZpoolOnline,
+				degraded, basic_zfs.ZpoolDegraded,
+				faulted, basic_zfs.ZpoolFaulted,
+				offline, basic_zfs.ZpoolOffline,
+				unavail, basic_zfs.ZpoolUnavail,
+				removed, basic_zfs.ZpoolRemoved,
+			),
 			poolLabels,
 		),
 
