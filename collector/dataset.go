@@ -2,8 +2,6 @@ package collector
 
 import (
 	"fmt"
-	"log"
-	"strconv"
 
 	"github.com/pdf/zfs_exporter/basic_zfs"
 )
@@ -62,19 +60,6 @@ type datasetCollector struct {
 	volumeSizeBytes desc
 }
 
-func (c *datasetCollector) toFloat64(dsPropValue string) float64 {
-	var v float64
-	if dsPropValue != "-" && dsPropValue != "none" {
-		var err error
-		v, err = strconv.ParseFloat(dsPropValue, 64)
-		if err != nil {
-			log.Fatalln(err)
-			return 0
-		}
-	}
-	return v
-}
-
 func (c *datasetCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
 	for _, pool := range pools {
 		if err := c.updatePoolMetrics(ch, pool, excludes); err != nil {
@@ -123,31 +108,31 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, d
 	// Metrics shared by all dataset types.
 	ch <- newGaugeMetric(
 		c.logicalReferencedBytes,
-		c.toFloat64(dsProps[1]),
+		float64FromNumProp(dsProps[1]),
 		labelValues,
 	)
 
 	ch <- newGaugeMetric(
 		c.logicalUsedBytes,
-		c.toFloat64(dsProps[2]),
+		float64FromNumProp(dsProps[2]),
 		labelValues,
 	)
 
 	ch <- newGaugeMetric(
 		c.referencedBytes,
-		c.toFloat64(dsProps[3]),
+		float64FromNumProp(dsProps[3]),
 		labelValues,
 	)
 
 	ch <- newGaugeMetric(
 		c.usedBytes,
-		c.toFloat64(dsProps[4]),
+		float64FromNumProp(dsProps[4]),
 		labelValues,
 	)
 
 	ch <- newGaugeMetric(
 		c.writtenBytes,
-		c.toFloat64(dsProps[5]),
+		float64FromNumProp(dsProps[5]),
 		labelValues,
 	)
 
@@ -156,31 +141,31 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, d
 	case basic_zfs.DatasetFilesystem, basic_zfs.DatasetVolume:
 		ch <- newGaugeMetric(
 			c.availableBytes,
-			c.toFloat64(dsProps[6]),
+			float64FromNumProp(dsProps[6]),
 			labelValues,
 		)
 
 		ch <- newGaugeMetric(
 			c.usedByChildrenBytes,
-			c.toFloat64(dsProps[7]),
+			float64FromNumProp(dsProps[7]),
 			labelValues,
 		)
 
 		ch <- newGaugeMetric(
 			c.usedByDatasetBytes,
-			c.toFloat64(dsProps[8]),
+			float64FromNumProp(dsProps[8]),
 			labelValues,
 		)
 
 		ch <- newGaugeMetric(
 			c.usedByRefreservationBytes,
-			c.toFloat64(dsProps[9]),
+			float64FromNumProp(dsProps[9]),
 			labelValues,
 		)
 
 		ch <- newGaugeMetric(
 			c.usedBySnapshotsBytes,
-			c.toFloat64(dsProps[10]),
+			float64FromNumProp(dsProps[10]),
 			labelValues,
 		)
 	}
@@ -190,14 +175,14 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, d
 	case basic_zfs.DatasetFilesystem:
 		ch <- newGaugeMetric(
 			c.quotaBytes,
-			c.toFloat64(dsProps[11]),
+			float64FromNumProp(dsProps[11]),
 			labelValues,
 		)
 
 	case basic_zfs.DatasetVolume:
 		ch <- newGaugeMetric(
 			c.volumeSizeBytes,
-			c.toFloat64(dsProps[12]),
+			float64FromNumProp(dsProps[12]),
 			labelValues,
 		)
 	}

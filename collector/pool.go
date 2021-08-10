@@ -189,22 +189,3 @@ func newPoolCollector() (Collector, error) {
 		),
 	}, nil
 }
-
-func healthCodeFromString(status string) (healthCode, error) {
-	switch status {
-	case zfs.ZpoolOnline:
-		return online, nil
-	case zfs.ZpoolDegraded:
-		return degraded, nil
-	case zfs.ZpoolFaulted:
-		return faulted, nil
-	case zfs.ZpoolOffline:
-		return offline, nil
-	case zfs.ZpoolUnavail:
-		return unavail, nil
-	case zfs.ZpoolRemoved:
-		return removed, nil
-	}
-
-	return -1, fmt.Errorf(`unknown pool heath status: %s`, status)
-}
