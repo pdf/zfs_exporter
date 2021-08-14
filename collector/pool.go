@@ -2,6 +2,7 @@ package collector
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -116,13 +117,25 @@ type poolCollector struct {
 }
 
 func (c *poolCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(pools))
 	for _, pool := range pools {
-		if err := c.updatePoolMetrics(ch, pool); err != nil {
-			return err
-		}
+		wg.Add(1)
+		go func(pool string) {
+			if err := c.updatePoolMetrics(ch, pool); err != nil {
+				errChan <- err
+			}
+			wg.Done()
+		}(pool)
 	}
+	wg.Wait()
 
-	return nil
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
 }
 
 func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool string) error {
