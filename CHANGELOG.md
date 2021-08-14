@@ -1,3 +1,35 @@
+# [2.0.0](https://github.com/pdf/zfs_exporter/compare/v1.0.1...v2.0.0) (2021-08-14)
+
+
+### Code Refactoring
+
+* **collector:** Migrate to internal ZFS CLI implementation ([53b0e98](https://github.com/pdf/zfs_exporter/commit/53b0e98)), closes [#7](https://github.com/pdf/zfs_exporter/issues/7) [#9](https://github.com/pdf/zfs_exporter/issues/9) [#10](https://github.com/pdf/zfs_exporter/issues/10)
+
+
+### Features
+
+* **performance:** Execute collection concurrently per pool ([ccc6f22](https://github.com/pdf/zfs_exporter/commit/ccc6f22))
+* **zfs:** Add local ZFS CLI parsing ([f5050b1](https://github.com/pdf/zfs_exporter/commit/f5050b1))
+
+
+### BREAKING CHANGES
+
+* **collector:** Ratio values are now properly calculated in the range
+0-1, rather than being passed verbatim.
+
+The following metrics are affected by this change:
+- zfs_pool_deduplication_ratio
+- zfs_pool_capacity_ratio
+- zfs_pool_fragmentation_ratio
+- zfs_dataset_compression_ratio
+- zfs_dataset_referenced_compression_ratio
+
+Additionally, the zfs_dataset_fragmentation_percent metric has been
+renamed to zfs_dataset_fragmentation_ratio.
+
+
+
+
 ## [1.0.1](https://github.com/pdf/zfs_exporter/compare/v1.0.0...v1.0.1) (2021-08-03)
 
 
