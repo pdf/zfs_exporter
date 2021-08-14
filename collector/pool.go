@@ -29,14 +29,14 @@ var (
 			`dedupratio`: newProperty(
 				subsystemPool,
 				`deduplication_ratio`,
-				`The deduplication ratio specified for the pool, expressed as a multiplier.`,
+				`The ratio of deduplicated size vs undeduplicated size for data in this pool.`,
 				transformMultiplier,
 				poolLabels...,
 			),
 			`capacity`: newProperty(
 				subsystemPool,
 				`capacity_ratio`,
-				`Percentage of pool space used.`,
+				`Ratio of pool space used.`,
 				transformPercentage,
 				poolLabels...,
 			),
