@@ -2,9 +2,10 @@
 
 Prometheus exporter for ZFS (pools, filesystems, snapshots and volumes). Other implementations exist, however performance can be quite variable, producing occasional timeouts (and associated alerts). This exporter was built with a few features aimed at allowing users to avoid collecting more than they need to, and to ensure timeouts cannot occur, but that we eventually return useful data:
 
-- __Pool selection__ - allow the user to select which pools are collected
-- __Multiple collectors__ - allow the user to select which data types are collected (pools, filesystems, snapshots and volumes)
-- __Collection deadline and caching__ - if the collection duration exceeds the configured deadline, cached data from the last run will be returned for any metrics that have not yet been collected, and the current collection run will continue in the background.  Collections will not run concurrently, so that when a system is running slowly, we don't compound the problem - if an existing collection is still running, cached data will be returned.
+- **Pool selection** - allow the user to select which pools are collected
+- **Multiple collectors** - allow the user to select which data types are collected (pools, filesystems, snapshots and volumes)
+- **Property selection** - allow the user to select which properties are collected per data type (enabling only required properties will increase collector performance, by reducing metadata queries)
+- **Collection deadline and caching** - if the collection duration exceeds the configured deadline, cached data from the last run will be returned for any metrics that have not yet been collected, and the current collection run will continue in the background. Collections will not run concurrently, so that when a system is running slowly, we don't compound the problem - if an existing collection is still running, cached data will be returned.
 
 ## Installation
 
@@ -23,16 +24,24 @@ usage: zfs_exporter [<flags>]
 
 Flags:
   -h, --help                 Show context-sensitive help (also try --help-long and --help-man).
-      --collector.dataset-filesystem  
+      --collector.dataset-filesystem
                              Enable the dataset-filesystem collector (default: enabled)
-      --collector.dataset-snapshot  
+      --properties.dataset-filesystem="available,logicalused,quota,referenced,used,usedbydataset,written"
+                             Properties to include for the dataset-filesystem collector, comma-separated.
+      --collector.dataset-snapshot
                              Enable the dataset-snapshot collector (default: disabled)
-      --collector.dataset-volume  
+      --properties.dataset-snapshot="logicalused,referenced,used,written"
+                             Properties to include for the dataset-snapshot collector, comma-separated.
+      --collector.dataset-volume
                              Enable the dataset-volume collector (default: enabled)
+      --properties.dataset-volume="available,logicalused,referenced,used,usedbydataset,volsize,written"
+                             Properties to include for the dataset-volume collector, comma-separated.
       --collector.pool       Enable the pool collector (default: enabled)
-      --web.listen-address=":9134"  
+      --properties.pool="allocated,dedupratio,fragmentation,free,freeing,health,leaked,readonly,size"
+                             Properties to include for the pool collector, comma-separated.
+      --web.listen-address=":9134"
                              Address on which to expose metrics and web interface.
-      --web.telemetry-path="/metrics"  
+      --web.telemetry-path="/metrics"
                              Path under which to expose metrics.
       --deadline=8s          Maximum duration that a collection should run before returning cached data. Should
                              be set to a value shorter than your scrape timeout duration. The current
