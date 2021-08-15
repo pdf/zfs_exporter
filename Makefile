@@ -16,7 +16,10 @@ DOCKER_ARCHS ?= amd64 armv7 arm64 ppc64le s390x
 DOCKER_IMAGE_NAME ?= zfs-exporter
 
 .PHONY: all
-all:: vet precheck style lint unused build
+all:: test build
+
+.PHONY: test
+test:: vet precheck style lint unused common-test
 
 include Makefile.common
 
