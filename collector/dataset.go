@@ -216,7 +216,7 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, d
 	for k, v := range dataset.Properties {
 		prop, err := datasetProperties.find(k)
 		if err != nil {
-			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `property`, k, `err`, err)
+			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `collector`, c.kind, `property`, k, `err`, err)
 		}
 		if err = prop.push(ch, v, labelValues...); err != nil {
 			return err

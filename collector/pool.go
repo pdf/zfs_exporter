@@ -148,7 +148,7 @@ func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool string) error {
 	for k, v := range p.Properties {
 		prop, err := poolProperties.find(k)
 		if err != nil {
-			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `property`, k, `err`, err)
+			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `collector`, `pool`, `property`, k, `err`, err)
 		}
 		if err = prop.push(ch, v, labelValues...); err != nil {
 			return err
