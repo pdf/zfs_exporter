@@ -1,3 +1,19 @@
+# [2.1.0](https://github.com/pdf/zfs_exporter/compare/v2.0.0...v2.1.0) (2021-08-18)
+
+
+### Bug Fixes
+
+* **logging:** Include collector in warning for unsupported properties ([1760a4a](https://github.com/pdf/zfs_exporter/commit/1760a4a))
+* **metrics:** Invert ratio for multiplier fields, and clarify their docs ([1a7bc3a](https://github.com/pdf/zfs_exporter/commit/1a7bc3a)), closes [#11](https://github.com/pdf/zfs_exporter/issues/11)
+
+
+### Features
+
+* **build:** Update to Go 1.17 ([b64115c](https://github.com/pdf/zfs_exporter/commit/b64115c))
+
+
+
+
 # [2.0.0](https://github.com/pdf/zfs_exporter/compare/v1.0.1...v2.0.0) (2021-08-14)
 
 
