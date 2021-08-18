@@ -79,16 +79,9 @@ jobs:
 
       - name: Build
         id: build
-        env:
-          PREFIX: .build/linux-amd64
         run: |
-          make
-
-      - name: Crossbuild
-        id: crossbuild
-        run: |
-          promu crossbuild --parallelism $PARALLELISM --parallelism-thread 0
-          promu crossbuild --parallelism $PARALLELISM --parallelism-thread 0 tarballs
+          promu crossbuild --parallelism $PARALLELISM
+          promu crossbuild --parallelism $PARALLELISM tarballs
           promu checksum .tarballs
 
       - name: Create Release

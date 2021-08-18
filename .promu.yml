@@ -1,7 +1,7 @@
 go:
     # Whenever the Go version is updated here,
     # .circle/config.yml should also be updated.
-    version: 1.16
+    version: 1.17
 repository:
     path: github.com/pdf/zfs_exporter
 build:
@@ -12,6 +12,14 @@ build:
         -X github.com/prometheus/common/version.Branch={{.Branch}}
         -X github.com/prometheus/common/version.BuildUser={{user}}@{{host}}
         -X github.com/prometheus/common/version.BuildDate={{date "20060102-15:04:05"}}
+crossbuild:
+    platforms:
+        - linux
+        - illumos
+        - darwin
+        - freebsd
+        - netbsd
+        - dragonfly
 tarball:
     files:
         - LICENSE
