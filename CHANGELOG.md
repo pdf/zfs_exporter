@@ -1,3 +1,14 @@
+## [2.1.1](https://github.com/pdf/zfs_exporter/compare/v2.1.0...v2.1.1) (2021-08-27)
+
+
+### Bug Fixes
+
+* **build:** Update to Go 1.17 for crossbuild, and enable all platforms ([f47b69a](https://github.com/pdf/zfs_exporter/commit/f47b69a))
+* **core:** Update dependencies ([b39382b](https://github.com/pdf/zfs_exporter/commit/b39382b))
+
+
+
+
 # [2.1.0](https://github.com/pdf/zfs_exporter/compare/v2.0.0...v2.1.0) (2021-08-18)
 
 
