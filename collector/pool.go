@@ -64,7 +64,7 @@ var (
 			`freeing`: newProperty(
 				subsystemPool,
 				`freeing_bytes`,
-				`The amount of space in bytes remaining to be freed following the desctruction of a file system or snapshot.`,
+				`The amount of space in bytes remaining to be freed following the destruction of a file system or snapshot.`,
 				transformNumeric,
 				poolLabels...,
 			),
