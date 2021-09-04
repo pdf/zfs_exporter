@@ -48,6 +48,8 @@ Flags:
                              Address on which to expose metrics and web interface.
       --web.telemetry-path="/metrics"
                              Path under which to expose metrics.
+      --web.disable-exporter-metrics
+                             Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).
       --deadline=8s          Maximum duration that a collection should run before returning cached data. Should
                              be set to a value shorter than your scrape timeout duration. The current
                              collection run will continue and update the cache when complete (default: 8s)
