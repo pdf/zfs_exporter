@@ -28,25 +28,30 @@ func (c regexpCollection) MatchString(input string) bool {
 
 // ZFSConfig configures a ZFS collector
 type ZFSConfig struct {
-	Deadline time.Duration
-	Pools    []string
-	Excludes []string
-	Logger   log.Logger
+	DisableMetrics bool
+	Deadline       time.Duration
+	Pools          []string
+	Excludes       []string
+	Logger         log.Logger
 }
 
 // ZFS collector
 type ZFS struct {
-	Pools      []string
-	Collectors map[string]State
-	deadline   time.Duration
-	cache      *metricCache
-	ready      chan struct{}
-	logger     log.Logger
-	excludes   regexpCollection
+	Pools          []string
+	Collectors     map[string]State
+	disableMetrics bool
+	deadline       time.Duration
+	cache          *metricCache
+	ready          chan struct{}
+	logger         log.Logger
+	excludes       regexpCollection
 }
 
 // Describe implements the prometheus.Collector interface.
 func (c *ZFS) Describe(ch chan<- *prometheus.Desc) {
+	if c.disableMetrics {
+		return
+	}
 	ch <- scrapeDurationDesc
 	ch <- scrapeSuccessDesc
 }
@@ -207,6 +212,10 @@ func (c *ZFS) execute(ctx context.Context, name string, collector Collector, ch 
 			success = 1
 		}
 	}
+
+	if c.disableMetrics {
+		return
+	}
 	ch <- metric{
 		name:       scrapeDurationDescName,
 		prometheus: prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, duration.Seconds(), name),
@@ -228,12 +237,13 @@ func NewZFS(config ZFSConfig) (*ZFS, error) {
 	ready := make(chan struct{}, 1)
 	ready <- struct{}{}
 	return &ZFS{
-		deadline:   config.Deadline,
-		Pools:      config.Pools,
-		Collectors: collectorStates,
-		excludes:   excludes,
-		cache:      newMetricCache(),
-		ready:      ready,
-		logger:     config.Logger,
+		disableMetrics: config.DisableMetrics,
+		deadline:       config.Deadline,
+		Pools:          config.Pools,
+		Collectors:     collectorStates,
+		excludes:       excludes,
+		cache:          newMetricCache(),
+		ready:          ready,
+		logger:         config.Logger,
 	}, nil
 }
