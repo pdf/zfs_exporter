@@ -1,6 +1,8 @@
 # ZFS Exporter
 
+[![Test](https://github.com/pdf/zfs_exporter/actions/workflows/test.yml/badge.svg)](https://github.com/pdf/zfs_exporter/actions/workflows/test.yml)
 [![Release](https://github.com/pdf/zfs_exporter/actions/workflows/release.yml/badge.svg)](https://github.com/pdf/zfs_exporter/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pdf/zfs_exporter)](https://goreportcard.com/report/github.com/pdf/zfs_exporter)
 [![License](https://img.shields.io/badge/License-MIT-%23a31f34)](https://github.com/pdf/zfs_exporter/blob/master/LICENSE)
 
 Prometheus exporter for ZFS (pools, filesystems, snapshots and volumes). Other implementations exist, however performance can be quite variable, producing occasional timeouts (and associated alerts). This exporter was built with a few features aimed at allowing users to avoid collecting more than they need to, and to ensure timeouts cannot occur, but that we eventually return useful data:

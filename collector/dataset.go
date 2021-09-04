@@ -7,6 +7,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/pdf/zfs_exporter/zfs"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -165,9 +166,21 @@ func init() {
 }
 
 type datasetCollector struct {
-	kind  zfs.DatasetKind
-	log   log.Logger
-	props []string
+	kind   zfs.DatasetKind
+	log    log.Logger
+	client zfs.Client
+	props  []string
+}
+
+func (c *datasetCollector) describe(ch chan<- *prometheus.Desc) {
+	for _, k := range c.props {
+		prop, err := datasetProperties.find(k)
+		if err != nil {
+			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `collector`, c.kind, `property`, k, `err`, err)
+			continue
+		}
+		ch <- prop.desc
+	}
 }
 
 func (c *datasetCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
@@ -193,13 +206,14 @@ func (c *datasetCollector) update(ch chan<- metric, pools []string, excludes reg
 }
 
 func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool string, excludes regexpCollection) error {
-	datasets, err := zfs.DatasetProperties(pool, c.kind, c.props...)
+	datasets := c.client.Datasets(pool, c.kind)
+	props, err := datasets.Properties(c.props...)
 	if err != nil {
 		return err
 	}
 
-	for _, dataset := range datasets {
-		if excludes.MatchString(dataset.Name) {
+	for _, dataset := range props {
+		if excludes.MatchString(dataset.DatasetName()) {
 			continue
 		}
 		if err = c.updateDatasetMetrics(ch, pool, dataset); err != nil {
@@ -210,10 +224,10 @@ func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool string, excl
 	return nil
 }
 
-func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, dataset zfs.Dataset) error {
-	labelValues := []string{dataset.Name, pool, string(c.kind)}
+func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, dataset zfs.DatasetProperties) error {
+	labelValues := []string{dataset.DatasetName(), pool, string(c.kind)}
 
-	for k, v := range dataset.Properties {
+	for k, v := range dataset.Properties() {
 		prop, err := datasetProperties.find(k)
 		if err != nil {
 			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `collector`, c.kind, `property`, k, `err`, err)
@@ -226,24 +240,24 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, d
 	return nil
 }
 
-func newDatasetCollector(kind zfs.DatasetKind, l log.Logger, props []string) (Collector, error) {
+func newDatasetCollector(kind zfs.DatasetKind, l log.Logger, c zfs.Client, props []string) (Collector, error) {
 	switch kind {
 	case zfs.DatasetFilesystem, zfs.DatasetSnapshot, zfs.DatasetVolume:
 	default:
 		return nil, fmt.Errorf("unknown dataset type: %s", kind)
 	}
 
-	return &datasetCollector{kind: kind, log: l, props: props}, nil
+	return &datasetCollector{kind: kind, log: l, client: c, props: props}, nil
 }
 
-func newFilesystemCollector(l log.Logger, props []string) (Collector, error) {
-	return newDatasetCollector(zfs.DatasetFilesystem, l, props)
+func newFilesystemCollector(l log.Logger, c zfs.Client, props []string) (Collector, error) {
+	return newDatasetCollector(zfs.DatasetFilesystem, l, c, props)
 }
 
-func newSnapshotCollector(l log.Logger, props []string) (Collector, error) {
-	return newDatasetCollector(zfs.DatasetSnapshot, l, props)
+func newSnapshotCollector(l log.Logger, c zfs.Client, props []string) (Collector, error) {
+	return newDatasetCollector(zfs.DatasetSnapshot, l, c, props)
 }
 
-func newVolumeCollector(l log.Logger, props []string) (Collector, error) {
-	return newDatasetCollector(zfs.DatasetVolume, l, props)
+func newVolumeCollector(l log.Logger, c zfs.Client, props []string) (Collector, error) {
+	return newDatasetCollector(zfs.DatasetVolume, l, c, props)
 }

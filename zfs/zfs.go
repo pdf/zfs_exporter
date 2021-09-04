@@ -12,8 +12,54 @@ var (
 	ErrInvalidOutput = errors.New(`Invalid output executing command`)
 )
 
+// Client is the primary entrypoint
+type Client interface {
+	PoolNames() ([]string, error)
+	Pool(name string) Pool
+	Datasets(pool string, kind DatasetKind) Datasets
+}
+
+// Pool allows querying pool properties
+type Pool interface {
+	Name() string
+	Properties(props ...string) (PoolProperties, error)
+}
+
+// PoolProperties provides access to the properties for a pool
+type PoolProperties interface {
+	Properties() map[string]string
+}
+
+// Datasets allows querying properties for datasets in a pool
+type Datasets interface {
+	Pool() string
+	Kind() DatasetKind
+	Properties(props ...string) ([]DatasetProperties, error)
+}
+
+// DatasetProperties provides access to the properties for a dataset
+type DatasetProperties interface {
+	DatasetName() string
+	Properties() map[string]string
+}
+
 type handler interface {
 	processLine(pool string, line []string) error
+}
+
+type clientImpl struct {
+}
+
+func (z clientImpl) PoolNames() ([]string, error) {
+	return poolNames()
+}
+
+func (z clientImpl) Pool(name string) Pool {
+	return newPoolImpl(name)
+}
+
+func (z clientImpl) Datasets(pool string, kind DatasetKind) Datasets {
+	return newDatasetsImpl(pool, kind)
 }
 
 func execute(pool string, h handler, cmd string, args ...string) error {
@@ -47,4 +93,9 @@ func execute(pool string, h handler, cmd string, args ...string) error {
 	}
 
 	return c.Wait()
+}
+
+// New instantiates a ZFS Client
+func New() Client {
+	return clientImpl{}
 }

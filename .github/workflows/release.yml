@@ -19,6 +19,9 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Go Report Card
+        uses: creekorful/goreportcard-action@v1.0
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
         id: checkout

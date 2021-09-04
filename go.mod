@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/go-kit/kit v0.11.0
 	github.com/go-kit/log v0.1.0
+	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.30.0

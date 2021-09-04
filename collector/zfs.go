@@ -33,12 +33,14 @@ type ZFSConfig struct {
 	Pools          []string
 	Excludes       []string
 	Logger         log.Logger
+	ZFSClient      zfs.Client
 }
 
 // ZFS collector
 type ZFS struct {
 	Pools          []string
 	Collectors     map[string]State
+	client         zfs.Client
 	disableMetrics bool
 	deadline       time.Duration
 	cache          *metricCache
@@ -49,11 +51,22 @@ type ZFS struct {
 
 // Describe implements the prometheus.Collector interface.
 func (c *ZFS) Describe(ch chan<- *prometheus.Desc) {
-	if c.disableMetrics {
-		return
+	if !c.disableMetrics {
+		ch <- scrapeDurationDesc
+		ch <- scrapeSuccessDesc
 	}
-	ch <- scrapeDurationDesc
-	ch <- scrapeSuccessDesc
+
+	for _, state := range c.Collectors {
+		if !*state.Enabled {
+			continue
+		}
+
+		collector, err := state.factory(c.logger, c.client, strings.Split(*state.Properties, `,`))
+		if err != nil {
+			continue
+		}
+		collector.describe(ch)
+	}
 }
 
 // Collect implements the prometheus.Collector interface.
@@ -129,7 +142,7 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 			continue
 		}
 
-		collector, err := state.factory(c.logger, strings.Split(*state.Properties, `,`))
+		collector, err := state.factory(c.logger, c.client, strings.Split(*state.Properties, `,`))
 		if err != nil {
 			_ = level.Error(c.logger).Log("Error instantiating collector", "collector", name, "err", err)
 			continue
@@ -160,7 +173,7 @@ func (c *ZFS) sendCached(ch chan<- prometheus.Metric, cacheIndex map[string]stru
 }
 
 func (c *ZFS) getPools(pools []string) ([]string, error) {
-	poolNames, err := zfs.PoolNames()
+	poolNames, err := c.client.PoolNames()
 	if err != nil {
 		return nil, err
 	}
@@ -238,6 +251,7 @@ func NewZFS(config ZFSConfig) (*ZFS, error) {
 	ready <- struct{}{}
 	return &ZFS{
 		disableMetrics: config.DisableMetrics,
+		client:         config.ZFSClient,
 		deadline:       config.Deadline,
 		Pools:          config.Pools,
 		Collectors:     collectorStates,

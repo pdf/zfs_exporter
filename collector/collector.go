@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-kit/log"
+	"github.com/pdf/zfs_exporter/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -45,7 +46,7 @@ var (
 	errUnsupportedProperty = errors.New(`unsupported property`)
 )
 
-type factoryFunc func(l log.Logger, properties []string) (Collector, error)
+type factoryFunc func(l log.Logger, c zfs.Client, properties []string) (Collector, error)
 
 type transformFunc func(string) (float64, error)
 
@@ -60,6 +61,7 @@ type State struct {
 // Collector defines the minimum functionality for registering a collector
 type Collector interface {
 	update(ch chan<- metric, pools []string, excludes regexpCollection) error
+	describe(ch chan<- *prometheus.Desc)
 }
 
 type metric struct {

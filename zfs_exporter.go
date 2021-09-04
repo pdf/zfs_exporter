@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pdf/zfs_exporter/collector"
+	"github.com/pdf/zfs_exporter/zfs"
 
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
@@ -42,6 +43,7 @@ func main() {
 		Pools:          *pools,
 		Excludes:       *excludes,
 		Logger:         logger,
+		ZFSClient:      zfs.New(),
 	})
 	if err != nil {
 		_ = level.Error(logger).Log("msg", "Error creating an exporter", "err", err)

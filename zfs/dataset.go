@@ -16,41 +16,59 @@ const (
 	DatasetSnapshot DatasetKind = `snapshot`
 )
 
-// Dataset holds the properties for an individual dataset
-type Dataset struct {
-	Pool       string
-	Name       string
-	Properties map[string]string
+type datasetsImpl struct {
+	pool string
+	kind DatasetKind
 }
 
-// DatasetProperties returns the requested properties for all datasets in the given pool
-func DatasetProperties(pool string, kind DatasetKind, properties ...string) ([]Dataset, error) {
+func (d datasetsImpl) Pool() string {
+	return d.pool
+}
+
+func (d datasetsImpl) Kind() DatasetKind {
+	return d.kind
+}
+
+func (d datasetsImpl) Properties(props ...string) ([]DatasetProperties, error) {
 	handler := newDatasetHandler()
-	if err := execute(pool, handler, `zfs`, `get`, `-Hprt`, string(kind), `-o`, `name,property,value`, strings.Join(properties, `,`)); err != nil {
+	if err := execute(d.pool, handler, `zfs`, `get`, `-Hprt`, string(d.kind), `-o`, `name,property,value`, strings.Join(props, `,`)); err != nil {
 		return nil, err
 	}
 	return handler.datasets(), nil
 }
 
+type datasetPropertiesImpl struct {
+	datasetName string
+	properties  map[string]string
+}
+
+func (p *datasetPropertiesImpl) DatasetName() string {
+	return p.datasetName
+}
+
+func (p *datasetPropertiesImpl) Properties() map[string]string {
+	return p.properties
+}
+
 // datasetHandler handles parsing of the data returned from the CLI into Dataset structs
 type datasetHandler struct {
-	store map[string]Dataset
+	store map[string]*datasetPropertiesImpl
 }
 
 // processLine implements the handler interface
 func (h *datasetHandler) processLine(pool string, line []string) error {
-	if len(line) != 3 {
+	if len(line) != 3 || !strings.HasPrefix(line[0], pool) {
 		return ErrInvalidOutput
 	}
 	if _, ok := h.store[line[0]]; !ok {
-		h.store[line[0]] = newDataset(pool, line[0])
+		h.store[line[0]] = newDatasetPropertiesImpl(line[0])
 	}
-	h.store[line[0]].Properties[line[1]] = line[2]
+	h.store[line[0]].properties[line[1]] = line[2]
 	return nil
 }
 
-func (h *datasetHandler) datasets() []Dataset {
-	result := make([]Dataset, len(h.store))
+func (h *datasetHandler) datasets() []DatasetProperties {
+	result := make([]DatasetProperties, len(h.store))
 	i := 0
 	for _, dataset := range h.store {
 		result[i] = dataset
@@ -59,14 +77,22 @@ func (h *datasetHandler) datasets() []Dataset {
 	return result
 }
 
-func newDataset(pool string, name string) Dataset {
-	return Dataset{
-		Pool:       pool,
-		Name:       name,
-		Properties: make(map[string]string),
+func newDatasetPropertiesImpl(name string) *datasetPropertiesImpl {
+	return &datasetPropertiesImpl{
+		datasetName: name,
+		properties:  make(map[string]string),
+	}
+}
+
+func newDatasetsImpl(pool string, kind DatasetKind) datasetsImpl {
+	return datasetsImpl{
+		pool: pool,
+		kind: kind,
 	}
 }
 
 func newDatasetHandler() *datasetHandler {
-	return &datasetHandler{store: make(map[string]Dataset)}
+	return &datasetHandler{
+		store: make(map[string]*datasetPropertiesImpl),
+	}
 }

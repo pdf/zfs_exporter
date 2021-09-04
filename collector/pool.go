@@ -7,6 +7,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/pdf/zfs_exporter/zfs"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -112,8 +113,20 @@ func init() {
 }
 
 type poolCollector struct {
-	log   log.Logger
-	props []string
+	log    log.Logger
+	client zfs.Client
+	props  []string
+}
+
+func (c *poolCollector) describe(ch chan<- *prometheus.Desc) {
+	for _, k := range c.props {
+		prop, err := poolProperties.find(k)
+		if err != nil {
+			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `collector`, `pool`, `property`, k, `err`, err)
+			continue
+		}
+		ch <- prop.desc
+	}
 }
 
 func (c *poolCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
@@ -139,13 +152,14 @@ func (c *poolCollector) update(ch chan<- metric, pools []string, excludes regexp
 }
 
 func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool string) error {
-	p, err := zfs.PoolProperties(pool, c.props...)
+	p := c.client.Pool(pool)
+	props, err := p.Properties(c.props...)
 	if err != nil {
 		return err
 	}
 
 	labelValues := []string{pool}
-	for k, v := range p.Properties {
+	for k, v := range props.Properties() {
 		prop, err := poolProperties.find(k)
 		if err != nil {
 			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `collector`, `pool`, `property`, k, `err`, err)
@@ -158,6 +172,6 @@ func (c *poolCollector) updatePoolMetrics(ch chan<- metric, pool string) error {
 	return nil
 }
 
-func newPoolCollector(l log.Logger, props []string) (Collector, error) {
-	return &poolCollector{log: l, props: props}, nil
+func newPoolCollector(l log.Logger, c zfs.Client, props []string) (Collector, error) {
+	return &poolCollector{log: l, client: c, props: props}, nil
 }
