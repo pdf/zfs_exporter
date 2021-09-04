@@ -1,3 +1,18 @@
+# [2.2.0](https://github.com/pdf/zfs_exporter/compare/v2.1.1...v2.2.0) (2021-09-04)
+
+
+### Bug Fixes
+
+* **docs:** Correct misspelling ([066c7d2](https://github.com/pdf/zfs_exporter/commit/066c7d2))
+
+
+### Features
+
+* **metrics:** Allow disabling exporter metrics ([1ca8717](https://github.com/pdf/zfs_exporter/commit/1ca8717)), closes [#2](https://github.com/pdf/zfs_exporter/issues/2)
+
+
+
+
 ## [2.1.1](https://github.com/pdf/zfs_exporter/compare/v2.1.0...v2.1.1) (2021-08-27)
 
 
