@@ -174,10 +174,7 @@ zfs_pool_unsupported{pool="testpool"} 1024
 			t.Parallel()
 			ctrl, ctx := gomock.WithContext(context.Background(), t)
 			zfsClient := mock_zfs.NewMockClient(ctrl)
-			config, err := defaultConfig(zfsClient)
-			if err != nil {
-				t.Fatal(err)
-			}
+			config := defaultConfig(zfsClient)
 			if tc.explicitPools != nil {
 				config.Pools = tc.explicitPools
 			}

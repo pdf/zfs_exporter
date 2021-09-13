@@ -30,17 +30,13 @@ func callCollector(ctx context.Context, collector prometheus.Collector, metricRe
 	}
 }
 
-func defaultConfig(z zfs.Client) (ZFSConfig, error) {
-	duration, err := time.ParseDuration(`5m`)
-	if err != nil {
-		return ZFSConfig{}, err
-	}
+func defaultConfig(z zfs.Client) ZFSConfig {
 	return ZFSConfig{
 		DisableMetrics: true,
-		Deadline:       duration,
+		Deadline:       5 * time.Minute,
 		Logger:         logger,
 		ZFSClient:      z,
-	}, nil
+	}
 }
 
 func stringPointer(s string) *string {
