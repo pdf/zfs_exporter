@@ -1,3 +1,14 @@
+## [2.2.1](https://github.com/pdf/zfs_exporter/compare/v2.2.0...v2.2.1) (2021-09-13)
+
+
+### Bug Fixes
+
+* **collector:** Avoid race on upstream channel close, tidy sync points ([e6fbdf5](https://github.com/pdf/zfs_exporter/commit/e6fbdf5))
+* **docs:** Document web.disable-exporter-metrics flag in README ([20182da](https://github.com/pdf/zfs_exporter/commit/20182da))
+
+
+
+
 # [2.2.0](https://github.com/pdf/zfs_exporter/compare/v2.1.1...v2.2.0) (2021-09-04)
 
 
