@@ -129,7 +129,7 @@ var (
 			),
 			`usedbyrefreservation`: newProperty(
 				subsystemDataset,
-				`used_by_reference_reservation_bytes`,
+				`used_by_referenced_reservation_bytes`,
 				`The amount of space in bytes used by a refreservation set on this dataset, which would be freed if the refreservation was removed.`,
 				transformNumeric,
 				datasetLabels...,
