@@ -1,3 +1,15 @@
+## [2.2.2](https://github.com/pdf/zfs_exporter/compare/v2.2.1...v2.2.2) (2021-11-16)
+
+
+### Bug Fixes
+
+* **metrics:** Fix typo in metric name ([bbd3d91](https://github.com/pdf/zfs_exporter/commit/bbd3d91))
+* **pool:** Add SUSPENDED status ([9b9e655](https://github.com/pdf/zfs_exporter/commit/9b9e655))
+* **tests:** Remove unnecessary duration conversion ([b6a29ab](https://github.com/pdf/zfs_exporter/commit/b6a29ab))
+
+
+
+
 ## [2.2.1](https://github.com/pdf/zfs_exporter/compare/v2.2.0...v2.2.1) (2021-09-13)
 
 
