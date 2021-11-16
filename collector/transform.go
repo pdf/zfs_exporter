@@ -16,6 +16,7 @@ const (
 	poolOffline
 	poolUnavail
 	poolRemoved
+	poolSuspended
 )
 
 func transformNumeric(value string) (float64, error) {
@@ -40,6 +41,8 @@ func transformHealthCode(status string) (float64, error) {
 		result = poolUnavail
 	case zfs.PoolRemoved:
 		result = poolRemoved
+	case zfs.PoolSuspended:
+		result = poolSuspended
 	default:
 		return -1, fmt.Errorf(`unknown pool heath status: %s`, status)
 	}

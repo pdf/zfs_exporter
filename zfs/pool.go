@@ -22,6 +22,8 @@ const (
 	PoolUnavail PoolStatus = `UNAVAIL`
 	// PoolRemoved enum entry
 	PoolRemoved PoolStatus = `REMOVED`
+	// PoolSuspended enum entry
+	PoolSuspended PoolStatus = `SUSPENDED`
 )
 
 type poolImpl struct {

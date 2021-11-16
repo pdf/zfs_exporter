@@ -60,7 +60,7 @@ zfs_pool_free_bytes{pool="testpool"} 1024
 # HELP zfs_pool_freeing_bytes The amount of space in bytes remaining to be freed following the destruction of a file system or snapshot.
 # TYPE zfs_pool_freeing_bytes gauge
 zfs_pool_freeing_bytes{pool="testpool"} 0
-# HELP zfs_pool_health Health status code for the pool [0: ONLINE, 1: DEGRADED, 2: FAULTED, 3: OFFLINE, 4: UNAVAIL, 5: REMOVED].
+# HELP zfs_pool_health Health status code for the pool [0: ONLINE, 1: DEGRADED, 2: FAULTED, 3: OFFLINE, 4: UNAVAIL, 5: REMOVED, 6: SUSPENDED].
 # TYPE zfs_pool_health gauge
 zfs_pool_health{pool="testpool"} 0
 # HELP zfs_pool_leaked_bytes Number of leaked bytes in the pool.
@@ -114,7 +114,7 @@ zfs_pool_allocated_bytes{pool="testpool1"} 1024
 		},
 		{
 			name:           `health status`,
-			pools:          []string{`onlinepool`, `degradedpool`, `faultedpool`, `offlinepool`, `unavailpool`, `removedpool`},
+			pools:          []string{`onlinepool`, `degradedpool`, `faultedpool`, `offlinepool`, `unavailpool`, `removedpool`, `suspendedpool`},
 			propsRequested: []string{`health`},
 			metricNames:    []string{`zfs_pool_health`},
 			propsResults: map[string]map[string]string{
@@ -136,8 +136,11 @@ zfs_pool_allocated_bytes{pool="testpool1"} 1024
 				`removedpool`: {
 					`health`: `REMOVED`,
 				},
+				`suspendedpool`: {
+					`health`: `SUSPENDED`,
+				},
 			},
-			metricResults: `# HELP zfs_pool_health Health status code for the pool [0: ONLINE, 1: DEGRADED, 2: FAULTED, 3: OFFLINE, 4: UNAVAIL, 5: REMOVED].
+			metricResults: `# HELP zfs_pool_health Health status code for the pool [0: ONLINE, 1: DEGRADED, 2: FAULTED, 3: OFFLINE, 4: UNAVAIL, 5: REMOVED, 6: SUSPENDED].
 # TYPE zfs_pool_health gauge
 zfs_pool_health{pool="onlinepool"} 0
 zfs_pool_health{pool="degradedpool"} 1
@@ -145,6 +148,7 @@ zfs_pool_health{pool="faultedpool"} 2
 zfs_pool_health{pool="offlinepool"} 3
 zfs_pool_health{pool="unavailpool"} 4
 zfs_pool_health{pool="removedpool"} 5
+zfs_pool_health{pool="suspendedpool"} 6
 `,
 		},
 		{
