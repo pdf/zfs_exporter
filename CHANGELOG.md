@@ -1,3 +1,13 @@
+## [2.2.3](https://github.com/pdf/zfs_exporter/compare/v2.2.2...v2.2.3) (2022-01-05)
+
+
+### Bug Fixes
+
+* **build:** update go module version to match release tag major version ([f709083](https://github.com/pdf/zfs_exporter/commit/f709083))
+
+
+
+
 ## [2.2.2](https://github.com/pdf/zfs_exporter/compare/v2.2.1...v2.2.2) (2021-11-16)
 
 
