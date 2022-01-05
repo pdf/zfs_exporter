@@ -16,10 +16,17 @@ Prometheus exporter for ZFS (pools, filesystems, snapshots and volumes). Other i
 
 Download the [latest release](https://github.com/pdf/zfs_exporter/releases/latest) for your platform, and unpack it somewhere on your filesystem.
 
-You may also build the latest version using Go v1.11+ via `go get`:
+You may also build the latest version using Go v1.11 - 1.17 via `go get`:
 
 ```bash
 go get -u github.com/pdf/zfs_exporter
+```
+
+Installation can also be accomplished using `go install`:
+
+```bash
+version=latest # or a specific version tag
+go install github.com/pdf/zfs_exporter@$version
 ```
 
 ## Usage

@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/pdf/zfs_exporter/zfs"
+	"github.com/pdf/zfs_exporter/v2/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

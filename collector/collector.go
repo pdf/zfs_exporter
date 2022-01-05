@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-kit/log"
-	"github.com/pdf/zfs_exporter/zfs"
+	"github.com/pdf/zfs_exporter/v2/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/alecthomas/kingpin.v2"
 )

@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pdf/zfs_exporter/collector"
-	"github.com/pdf/zfs_exporter/zfs"
+	"github.com/pdf/zfs_exporter/v2/collector"
+	"github.com/pdf/zfs_exporter/v2/zfs"
 
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
