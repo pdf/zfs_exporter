@@ -1,3 +1,13 @@
+## [2.2.4](https://github.com/pdf/zfs_exporter/compare/v2.2.3...v2.2.4) (2022-01-05)
+
+
+### Bug Fixes
+
+* **build:** Update promu config to build v2 ([2a38914](https://github.com/pdf/zfs_exporter/commit/2a38914))
+
+
+
+
 ## [2.2.3](https://github.com/pdf/zfs_exporter/compare/v2.2.2...v2.2.3) (2022-01-05)
 
 
