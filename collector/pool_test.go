@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pdf/zfs_exporter/zfs/mock_zfs"
+	"github.com/pdf/zfs_exporter/v2/zfs/mock_zfs"
 )
 
 func TestPoolMetrics(t *testing.T) {

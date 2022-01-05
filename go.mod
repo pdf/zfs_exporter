@@ -1,4 +1,4 @@
-module github.com/pdf/zfs_exporter
+module github.com/pdf/zfs_exporter/v2
 
 go 1.17
 
