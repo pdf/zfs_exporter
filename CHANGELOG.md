@@ -1,3 +1,13 @@
+## [2.2.5](https://github.com/pdf/zfs_exporter/compare/v2.2.4...v2.2.5) (2022-01-30)
+
+
+### Bug Fixes
+
+* **core:** Correctly handle and report errors listing pools ([efbcceb](https://github.com/pdf/zfs_exporter/commit/efbcceb)), closes [#18](https://github.com/pdf/zfs_exporter/issues/18)
+
+
+
+
 ## [2.2.4](https://github.com/pdf/zfs_exporter/compare/v2.2.3...v2.2.4) (2022-01-05)
 
 
