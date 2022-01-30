@@ -121,14 +121,16 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 		c.ready <- struct{}{}
 	}()
 
-	pools, err := c.getPools(c.Pools)
-	if err != nil {
-		_ = level.Error(c.logger).Log("msg", "Error finding pools", "err", err)
-		return
-	}
+	pools, poolErr := c.getPools(c.Pools)
 
 	for name, state := range c.Collectors {
 		if !*state.Enabled {
+			wg.Done()
+			continue
+		}
+
+		if poolErr != nil {
+			c.publishCollectorMetrics(ctx, name, poolErr, 0, proxy)
 			wg.Done()
 			continue
 		}
@@ -147,7 +149,7 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 
 	// Wait for completion or timeout
 	<-ctx.Done()
-	err = ctx.Err()
+	err := ctx.Err()
 	if err == context.Canceled {
 		finalize()
 	} else if err != nil {
@@ -206,6 +208,11 @@ func (c *ZFS) execute(ctx context.Context, name string, collector Collector, ch 
 	begin := time.Now()
 	err := collector.update(ch, pools, c.excludes)
 	duration := time.Since(begin)
+
+	c.publishCollectorMetrics(ctx, name, err, duration, ch)
+}
+
+func (c *ZFS) publishCollectorMetrics(ctx context.Context, name string, err error, duration time.Duration, ch chan<- metric) {
 	var success float64
 
 	if err != nil {
