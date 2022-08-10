@@ -12,6 +12,4 @@ COPY . .
 
 RUN go build -v -o /usr/local/bin/zfs_exporter
 
-USER nobody
-
 ENTRYPOINT ["zfs_exporter"]
