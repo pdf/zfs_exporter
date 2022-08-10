@@ -75,6 +75,13 @@ Collectors that are enabled by default can be negated by prefixing the flag with
 zfs_exporter --no-collector.dataset-filesystem
 ```
 
+## Docker
+
+```sh
+docker build -t zfs_exporter .
+docker run -d -p 9134:9134 --rm --privileged --name zfs_exporter zfs_exporter
+```
+
 ## Caveats
 
 The collector may need to be run as root on some platforms (ie - Linux prior to ZFS v0.7.0).
