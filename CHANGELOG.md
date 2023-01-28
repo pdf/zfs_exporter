@@ -1,3 +1,13 @@
+## [2.2.6](https://github.com/pdf/zfs_exporter/compare/v2.2.5...v2.2.6) (2023-01-28)
+
+
+### Bug Fixes
+
+* **transform:** Add support for ancient ZFS fragmentation metric ([a0240d1](https://github.com/pdf/zfs_exporter/commit/a0240d1)), closes [#26](https://github.com/pdf/zfs_exporter/issues/26)
+
+
+
+
 ## [2.2.5](https://github.com/pdf/zfs_exporter/compare/v2.2.4...v2.2.5) (2022-01-30)
 
 
