@@ -166,6 +166,21 @@ zfs_pool_health{pool="suspendedpool"} 6
 zfs_pool_unsupported{pool="testpool"} 1024
 `,
 		},
+		{
+			name:           `legacy fragmentation`,
+			pools:          []string{`testpool`},
+			propsRequested: []string{`fragmentation`},
+			metricNames:    []string{`zfs_pool_fragmentation_ratio`},
+			propsResults: map[string]map[string]string{
+				`testpool`: {
+					`fragmentation`: `5%`,
+				},
+			},
+			metricResults: `# HELP zfs_pool_fragmentation_ratio The fragmentation ratio of the pool.
+# TYPE zfs_pool_fragmentation_ratio gauge
+zfs_pool_fragmentation_ratio{pool="testpool"} 0.05
+`,
+		},
 	}
 
 	for _, tc := range testCases {
