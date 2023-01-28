@@ -167,18 +167,22 @@ zfs_pool_unsupported{pool="testpool"} 1024
 `,
 		},
 		{
-			name:           `legacy fragmentation`,
+			name:           `legacy fragmentation/dedupratio`,
 			pools:          []string{`testpool`},
-			propsRequested: []string{`fragmentation`},
-			metricNames:    []string{`zfs_pool_fragmentation_ratio`},
+			propsRequested: []string{`fragmentation`, `dedupratio`},
+			metricNames:    []string{`zfs_pool_fragmentation_ratio`, `zfs_pool_deduplication_ratio`},
 			propsResults: map[string]map[string]string{
 				`testpool`: {
 					`fragmentation`: `5%`,
+					`dedupratio`:    `2.50x`,
 				},
 			},
 			metricResults: `# HELP zfs_pool_fragmentation_ratio The fragmentation ratio of the pool.
 # TYPE zfs_pool_fragmentation_ratio gauge
 zfs_pool_fragmentation_ratio{pool="testpool"} 0.05
+# HELP zfs_pool_deduplication_ratio The ratio of deduplicated size vs undeduplicated size for data in this pool.
+# TYPE zfs_pool_deduplication_ratio gauge
+zfs_pool_deduplication_ratio{pool="testpool"} 0.4
 `,
 		},
 	}

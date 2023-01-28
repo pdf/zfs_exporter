@@ -74,6 +74,9 @@ func transformPercentage(value string) (float64, error) {
 }
 
 func transformMultiplier(value string) (float64, error) {
+	if len(value) > 0 && value[len(value)-1] == 'x' {
+		value = value[:len(value)-1]
+	}
 	v, err := transformNumeric(value)
 	if err != nil {
 		return -1, err
