@@ -1,3 +1,13 @@
+## [2.2.7](https://github.com/pdf/zfs_exporter/compare/v2.2.6...v2.2.7) (2023-01-28)
+
+
+### Bug Fixes
+
+* **transform:** Add support for ancient ZFS dedupratio metric ([85bdc3b](https://github.com/pdf/zfs_exporter/commit/85bdc3b)), closes [#26](https://github.com/pdf/zfs_exporter/issues/26)
+
+
+
+
 ## [2.2.6](https://github.com/pdf/zfs_exporter/compare/v2.2.5...v2.2.6) (2023-01-28)
 
 
