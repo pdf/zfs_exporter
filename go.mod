@@ -8,7 +8,7 @@ require (
 	github.com/go-kit/log v0.1.0
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.11.1
 	github.com/prometheus/common v0.30.0
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
