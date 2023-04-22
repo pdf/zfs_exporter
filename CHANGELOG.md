@@ -1,3 +1,14 @@
+## [2.2.8](https://github.com/pdf/zfs_exporter/compare/v2.2.7...v2.2.8) (2023-04-22)
+
+
+### Bug Fixes
+
+* **build:** Tag correct commit SHA ([0712333](https://github.com/pdf/zfs_exporter/commit/0712333))
+* **security:** Update dependencies for upstream vulnerabilities ([2220da2](https://github.com/pdf/zfs_exporter/commit/2220da2))
+
+
+
+
 ## [2.2.7](https://github.com/pdf/zfs_exporter/compare/v2.2.6...v2.2.7) (2023-01-28)
 
 
