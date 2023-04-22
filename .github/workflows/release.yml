@@ -66,7 +66,7 @@ jobs:
 
       - name: Commit Changes
         id: commit_changes
-        uses: EndBug/add-and-commit@v4
+        uses: EndBug/add-and-commit@v9.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -76,9 +76,10 @@ jobs:
 
       - name: Commit Tag
         id: commit_tag
-        uses: mathieudutour/github-tag-action@v4.5
+        uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          commit_sha: ${{ steps.commit_changes.outputs.commit_long_sha }}
 
       - name: Build
         id: build
