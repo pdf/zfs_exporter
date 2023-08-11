@@ -25,6 +25,8 @@ func main() {
 		deadline                = kingpin.Flag("deadline", "Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your scrape timeout duration. The current collection run will continue and update the cache when complete (default: 8s)").Default("8s").Duration()
 		pools                   = kingpin.Flag("pool", "Name of the pool(s) to collect, repeat for multiple pools (default: all pools).").Strings()
 		excludes                = kingpin.Flag("exclude", "Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.").Strings()
+		certPath                = kingpin.Flag("tls.server-crt", "Path to PEM encoded file containing TLS server cert.").Default("").String()
+		keyPath                 = kingpin.Flag("tls.server-key", "Path to PEM encoded file containing TLS server key (unencyrpted).").Default("").String()
 	)
 
 	promlogConfig := &promlog.Config{}
@@ -86,8 +88,14 @@ func main() {
 		}
 	})
 
-	_ = level.Info(logger).Log("msg", "Listening on address", "address", *listenAddress)
-	err = http.ListenAndServe(*listenAddress, nil)
+	if *certPath == "" && *keyPath == "" {
+		_ = level.Info(logger).Log("msg", "Listening on address", "address", *listenAddress)
+		err = http.ListenAndServe(*listenAddress, nil)
+	} else {
+		_ = level.Info(logger).Log("msg", "Listening on address (TLS enabled)", "address", *listenAddress)
+		err = http.ListenAndServeTLS(*listenAddress, *certPath, *keyPath, nil)
+	}
+
 	if err != nil {
 		_ = level.Error(logger).Log("msg", "Error starting HTTP server", "err", err)
 		os.Exit(1)
