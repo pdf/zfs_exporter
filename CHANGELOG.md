@@ -1,3 +1,13 @@
+## [2.3.1](https://github.com/pdf/zfs_exporter/compare/v2.3.0...v2.3.1) (2023-08-12)
+
+
+### Bug Fixes
+
+* **build:** Update deps ([ddf8e09](https://github.com/pdf/zfs_exporter/commit/ddf8e09))
+
+
+
+
 # [2.3.0](https://github.com/pdf/zfs_exporter/compare/v2.2.8...v2.3.0) (2023-08-12)
 
 
