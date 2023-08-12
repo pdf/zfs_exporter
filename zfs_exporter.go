@@ -15,16 +15,18 @@ import (
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
+	"github.com/prometheus/exporter-toolkit/web"
+	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 )
 
 func main() {
 	var (
-		listenAddress           = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9134").String()
 		metricsPath             = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 		metricsExporterDisabled = kingpin.Flag(`web.disable-exporter-metrics`, `Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).`).Default(`false`).Bool()
 		deadline                = kingpin.Flag("deadline", "Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your scrape timeout duration. The current collection run will continue and update the cache when complete (default: 8s)").Default("8s").Duration()
 		pools                   = kingpin.Flag("pool", "Name of the pool(s) to collect, repeat for multiple pools (default: all pools).").Strings()
 		excludes                = kingpin.Flag("exclude", "Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.").Strings()
+		toolkitFlags            = kingpinflag.AddFlags(kingpin.CommandLine, ":9134")
 	)
 
 	promlogConfig := &promlog.Config{}
@@ -73,21 +75,28 @@ func main() {
 	_ = level.Info(logger).Log("msg", "Enabling collectors", "collectors", strings.Join(collectorNames, ", "))
 
 	http.Handle(*metricsPath, promhttp.Handler())
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		_, err = w.Write([]byte(`<html>
-			<head><title>ZFS Exporter</title></head>
-			<body>
-			<h1>ZFS Exporter</h1>
-			<p><a href="` + *metricsPath + `">Metrics</a></p>
-			</body>
-			</html>`))
-		if err != nil {
-			_ = level.Error(logger).Log("msg", "Error writing response", "err", err)
+	if *metricsPath != "/" {
+		landingConfig := web.LandingConfig{
+			Name:        "ZFS Exporter",
+			Description: "Prometheus ZFS Exporter",
+			Version:     version.Info(),
+			Links: []web.LandingLinks{
+				{
+					Address: *metricsPath,
+					Text:    "Metrics",
+				},
+			},
 		}
-	})
+		landingPage, err := web.NewLandingPage(landingConfig)
+		if err != nil {
+			_ = level.Error(logger).Log("err", err)
+			os.Exit(1)
+		}
+		http.Handle("/", landingPage)
+	}
 
-	_ = level.Info(logger).Log("msg", "Listening on address", "address", *listenAddress)
-	err = http.ListenAndServe(*listenAddress, nil)
+	server := &http.Server{}
+	err = web.ListenAndServe(server, toolkitFlags, logger)
 	if err != nil {
 		_ = level.Error(logger).Log("msg", "Error starting HTTP server", "err", err)
 		os.Exit(1)

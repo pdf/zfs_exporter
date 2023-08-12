@@ -75,6 +75,18 @@ Collectors that are enabled by default can be negated by prefixing the flag with
 zfs_exporter --no-collector.dataset-filesystem
 ```
 
+## TLS endpoint
+
+**EXPERIMENTAL**
+
+The exporter supports TLS via a new web configuration file.
+
+```console
+./zfs_exporter --web.config.file=web-config.yml
+```
+
+See the [exporter-toolkit https package](https://github.com/prometheus/exporter-toolkit/blob/v0.1.0/https/README.md) for more details.
+
 ## Caveats
 
 The collector may need to be run as root on some platforms (ie - Linux prior to ZFS v0.7.0).
