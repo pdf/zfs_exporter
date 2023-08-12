@@ -1,3 +1,13 @@
+# [2.3.0](https://github.com/pdf/zfs_exporter/compare/v2.2.8...v2.3.0) (2023-08-12)
+
+
+### Features
+
+* **server:** Add exporter toolkit for TLS support ([8102e2e](https://github.com/pdf/zfs_exporter/commit/8102e2e)), closes [#34](https://github.com/pdf/zfs_exporter/issues/34)
+
+
+
+
 ## [2.2.8](https://github.com/pdf/zfs_exporter/compare/v2.2.7...v2.2.8) (2023-04-22)
 
 
