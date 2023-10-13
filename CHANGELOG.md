@@ -1,3 +1,8 @@
+## [2.3.2](https://github.com/pdf/zfs_exporter/compare/v2.3.1...v2.3.2) (2023-10-13)
+
+
+
+
 ## [2.3.1](https://github.com/pdf/zfs_exporter/compare/v2.3.0...v2.3.1) (2023-08-12)
 
 
