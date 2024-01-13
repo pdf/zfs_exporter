@@ -2,6 +2,8 @@ package zfs
 
 import (
 	"bufio"
+	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 )
@@ -68,17 +70,23 @@ func poolNames() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
 	scanner := bufio.NewScanner(out)
 
 	if err = cmd.Start(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to start command '%s': %w", cmd.String(), err)
 	}
 
 	for scanner.Scan() {
 		pools = append(pools, scanner.Text())
 	}
+
+	stde, _ := io.ReadAll(stderr)
 	if err = cmd.Wait(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to execute command '%s'; output: '%s' (%w)", cmd.String(), strings.TrimSpace(string(stde)), err)
 	}
 
 	return pools, nil
