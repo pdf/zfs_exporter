@@ -121,7 +121,17 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 		c.ready <- struct{}{}
 	}()
 
-	pools, poolErr := c.getPools(c.Pools)
+	pools0, poolErr := c.getPools(c.Pools)
+
+	var pools []string
+
+	for _, p := range pools0 {
+		if c.excludes.MatchString(p) {
+			continue
+		}
+
+		pools = append(pools, p)
+	}
 
 	for name, state := range c.Collectors {
 		if !*state.Enabled {
