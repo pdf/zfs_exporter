@@ -3,8 +3,10 @@ package zfs
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 )
 
 var (
@@ -69,6 +71,11 @@ func execute(pool string, h handler, cmd string, args ...string) error {
 		return err
 	}
 
+	stderr, err := c.StderrPipe()
+	if err != nil {
+		return err
+	}
+
 	r := csv.NewReader(out)
 	r.Comma = '\t'
 	r.LazyQuotes = true
@@ -76,7 +83,7 @@ func execute(pool string, h handler, cmd string, args ...string) error {
 	r.FieldsPerRecord = 3
 
 	if err = c.Start(); err != nil {
-		return err
+		return fmt.Errorf("Failed to start command '%s': %w", c.String(), err)
 	}
 
 	for {
@@ -92,7 +99,11 @@ func execute(pool string, h handler, cmd string, args ...string) error {
 		}
 	}
 
-	return c.Wait()
+	stde, _ := io.ReadAll(stderr)
+	if err = c.Wait(); err != nil {
+		return fmt.Errorf("Failed to execute command '%s'; output: '%s' (%w)", c.String(), strings.TrimSpace(string(stde)), err)
+	}
+	return nil
 }
 
 // New instantiates a ZFS Client
