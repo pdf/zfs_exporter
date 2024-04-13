@@ -1,3 +1,13 @@
+## [2.3.4](https://github.com/pdf/zfs_exporter/compare/v2.3.3...v2.3.4) (2024-04-13)
+
+
+### Bug Fixes
+
+* **deps:** Bump deps for security ([1404536](https://github.com/pdf/zfs_exporter/commit/1404536))
+
+
+
+
 ## [2.3.3](https://github.com/pdf/zfs_exporter/compare/v2.3.2...v2.3.3) (2024-04-13)
 
 
