@@ -61,7 +61,7 @@ Flags:
                              be set to a value shorter than your scrape timeout duration. The current
                              collection run will continue and update the cache when complete (default: 8s)
       --pool=POOL ...        Name of the pool(s) to collect, repeat for multiple pools (default: all pools).
-      --exclude=EXCLUDE ...  Exclude datasets/snapshots/volumes that match the provided regex (e.g.
+      --exclude=EXCLUDE ...  Exclude pools/datasets/snapshots/volumes that match the provided regex (e.g.
                              '^rpool/docker/'), may be specified multiple times.
       --log.level=info       Only log messages with the given severity or above. One of: [debug, info, warn,
                              error]
