@@ -1,3 +1,13 @@
+## [2.3.6](https://github.com/pdf/zfs_exporter/compare/v2.3.5...v2.3.6) (2025-01-18)
+
+
+### Bug Fixes
+
+* **build:** Bump Go version in actions ([00498df](https://github.com/pdf/zfs_exporter/commit/00498df))
+
+
+
+
 ## [2.3.5](https://github.com/pdf/zfs_exporter/compare/v2.3.4...v2.3.5) (2025-01-18)
 
 
