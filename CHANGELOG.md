@@ -1,3 +1,13 @@
+## [2.3.5](https://github.com/pdf/zfs_exporter/compare/v2.3.4...v2.3.5) (2025-01-18)
+
+
+### Bug Fixes
+
+* **core:** Bump dependencies, migrate to promslog ([ccc2b21](https://github.com/pdf/zfs_exporter/commit/ccc2b21))
+
+
+
+
 ## [2.3.4](https://github.com/pdf/zfs_exporter/compare/v2.3.3...v2.3.4) (2024-04-13)
 
 
