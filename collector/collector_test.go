@@ -3,18 +3,16 @@ package collector
 import (
 	"bytes"
 	"context"
+	"io"
+	"log/slog"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/pdf/zfs_exporter/v2/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
-var (
-	logger = log.NewNopLogger()
-	//logger = log.NewLogfmtLogger(os.Stderr)
-)
+var logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 func callCollector(ctx context.Context, collector prometheus.Collector, metricResults []byte, metricNames []string) error {
 	result := make(chan error)

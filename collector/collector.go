@@ -3,10 +3,10 @@ package collector
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/go-kit/log"
 	"github.com/pdf/zfs_exporter/v2/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -46,7 +46,7 @@ var (
 	errUnsupportedProperty = errors.New(`unsupported property`)
 )
 
-type factoryFunc func(l log.Logger, c zfs.Client, properties []string) (Collector, error)
+type factoryFunc func(l *slog.Logger, c zfs.Client, properties []string) (Collector, error)
 
 type transformFunc func(string) (float64, error)
 

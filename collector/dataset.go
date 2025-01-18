@@ -2,10 +2,9 @@ package collector
 
 import (
 	"fmt"
+	"log/slog"
 	"sync"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/pdf/zfs_exporter/v2/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -167,7 +166,7 @@ func init() {
 
 type datasetCollector struct {
 	kind   zfs.DatasetKind
-	log    log.Logger
+	log    *slog.Logger
 	client zfs.Client
 	props  []string
 }
@@ -176,7 +175,7 @@ func (c *datasetCollector) describe(ch chan<- *prometheus.Desc) {
 	for _, k := range c.props {
 		prop, err := datasetProperties.find(k)
 		if err != nil {
-			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `collector`, c.kind, `property`, k, `err`, err)
+			c.log.Warn(propertyUnsupportedMsg, `help`, helpIssue, `collector`, c.kind, `property`, k, `err`, err)
 			continue
 		}
 		ch <- prop.desc
@@ -230,7 +229,7 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, d
 	for k, v := range dataset.Properties() {
 		prop, err := datasetProperties.find(k)
 		if err != nil {
-			_ = level.Warn(c.log).Log(`msg`, propertyUnsupportedMsg, `help`, helpIssue, `collector`, c.kind, `property`, k, `err`, err)
+			c.log.Warn(propertyUnsupportedMsg, `help`, helpIssue, `collector`, c.kind, `property`, k, `err`, err)
 		}
 		if err = prop.push(ch, v, labelValues...); err != nil {
 			return err
@@ -240,7 +239,7 @@ func (c *datasetCollector) updateDatasetMetrics(ch chan<- metric, pool string, d
 	return nil
 }
 
-func newDatasetCollector(kind zfs.DatasetKind, l log.Logger, c zfs.Client, props []string) (Collector, error) {
+func newDatasetCollector(kind zfs.DatasetKind, l *slog.Logger, c zfs.Client, props []string) (Collector, error) {
 	switch kind {
 	case zfs.DatasetFilesystem, zfs.DatasetSnapshot, zfs.DatasetVolume:
 	default:
@@ -250,14 +249,14 @@ func newDatasetCollector(kind zfs.DatasetKind, l log.Logger, c zfs.Client, props
 	return &datasetCollector{kind: kind, log: l, client: c, props: props}, nil
 }
 
-func newFilesystemCollector(l log.Logger, c zfs.Client, props []string) (Collector, error) {
+func newFilesystemCollector(l *slog.Logger, c zfs.Client, props []string) (Collector, error) {
 	return newDatasetCollector(zfs.DatasetFilesystem, l, c, props)
 }
 
-func newSnapshotCollector(l log.Logger, c zfs.Client, props []string) (Collector, error) {
+func newSnapshotCollector(l *slog.Logger, c zfs.Client, props []string) (Collector, error) {
 	return newDatasetCollector(zfs.DatasetSnapshot, l, c, props)
 }
 
-func newVolumeCollector(l log.Logger, c zfs.Client, props []string) (Collector, error) {
+func newVolumeCollector(l *slog.Logger, c zfs.Client, props []string) (Collector, error) {
 	return newDatasetCollector(zfs.DatasetVolume, l, c, props)
 }

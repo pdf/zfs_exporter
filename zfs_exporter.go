@@ -9,11 +9,11 @@ import (
 	"github.com/pdf/zfs_exporter/v2/zfs"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	versioncollector "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/promlog"
-	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/common/promslog"
+	"github.com/prometheus/common/promslog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
@@ -29,15 +29,15 @@ func main() {
 		toolkitFlags            = kingpinflag.AddFlags(kingpin.CommandLine, ":9134")
 	)
 
-	promlogConfig := &promlog.Config{}
-	flag.AddFlags(kingpin.CommandLine, promlogConfig)
+	promslogConfig := &promslog.Config{}
+	flag.AddFlags(kingpin.CommandLine, promslogConfig)
 	kingpin.Version(version.Print("zfs_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-	logger := promlog.New(promlogConfig)
+	logger := promslog.New(promslogConfig)
 
-	_ = level.Info(logger).Log("msg", "Starting zfs_exporter", "version", version.Info())
-	_ = level.Info(logger).Log("msg", "Build context", "context", version.BuildContext())
+	logger.Info("Starting zfs_exporter", "version", version.Info())
+	logger.Info("Build context", "context", version.BuildContext())
 
 	c, err := collector.NewZFS(collector.ZFSConfig{
 		DisableMetrics: *metricsExporterDisabled,
@@ -48,7 +48,7 @@ func main() {
 		ZFSClient:      zfs.New(),
 	})
 	if err != nil {
-		_ = level.Error(logger).Log("msg", "Error creating an exporter", "err", err)
+		logger.Error("Error creating an exporter", "err", err)
 		os.Exit(1)
 	}
 
@@ -58,12 +58,12 @@ func main() {
 		prometheus.DefaultGatherer = r
 	}
 	prometheus.MustRegister(c)
-	prometheus.MustRegister(version.NewCollector("zfs_exporter"))
+	prometheus.MustRegister(versioncollector.NewCollector("zfs_exporter"))
 
 	if len(c.Pools) > 0 {
-		_ = level.Info(logger).Log("msg", "Enabling pools", "pools", strings.Join(c.Pools, ", "))
+		logger.Info("Enabling pools", "pools", strings.Join(c.Pools, ", "))
 	} else {
-		_ = level.Info(logger).Log("msg", "Enabling pools", "pools", "(all)")
+		logger.Info("Enabling pools", "pools", "(all)")
 	}
 
 	collectorNames := make([]string, 0, len(c.Collectors))
@@ -72,7 +72,7 @@ func main() {
 			collectorNames = append(collectorNames, n)
 		}
 	}
-	_ = level.Info(logger).Log("msg", "Enabling collectors", "collectors", strings.Join(collectorNames, ", "))
+	logger.Info("Enabling collectors", "collectors", strings.Join(collectorNames, ", "))
 
 	http.Handle(*metricsPath, promhttp.Handler())
 	if *metricsPath != "/" {
@@ -89,7 +89,7 @@ func main() {
 		}
 		landingPage, err := web.NewLandingPage(landingConfig)
 		if err != nil {
-			_ = level.Error(logger).Log("err", err)
+			logger.Error("Error creating landing page", "err", err)
 			os.Exit(1)
 		}
 		http.Handle("/", landingPage)
@@ -98,7 +98,7 @@ func main() {
 	server := &http.Server{}
 	err = web.ListenAndServe(server, toolkitFlags, logger)
 	if err != nil {
-		_ = level.Error(logger).Log("msg", "Error starting HTTP server", "err", err)
+		logger.Error("Error starting HTTP server", "err", err)
 		os.Exit(1)
 	}
 }

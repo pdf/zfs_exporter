@@ -2,14 +2,13 @@ package collector
 
 import (
 	"context"
+	"log/slog"
 	"regexp"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/pdf/zfs_exporter/v2/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -32,7 +31,7 @@ type ZFSConfig struct {
 	Deadline       time.Duration
 	Pools          []string
 	Excludes       []string
-	Logger         log.Logger
+	Logger         *slog.Logger
 	ZFSClient      zfs.Client
 }
 
@@ -45,7 +44,7 @@ type ZFS struct {
 	deadline       time.Duration
 	cache          *metricCache
 	ready          chan struct{}
-	logger         log.Logger
+	logger         *slog.Logger
 	excludes       regexpCollection
 }
 
@@ -94,7 +93,6 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 		default:
 			close(finalized)
 		}
-
 	}
 
 	// Close the proxy channel upon collector completion.
@@ -137,7 +135,7 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 
 		collector, err := state.factory(c.logger, c.client, strings.Split(*state.Properties, `,`))
 		if err != nil {
-			_ = level.Error(c.logger).Log("Error instantiating collector", "collector", name, "err", err)
+			c.logger.Error("Error instantiating collector", "collector", name, "err", err)
 			wg.Done()
 			continue
 		}
@@ -197,7 +195,7 @@ func (c *ZFS) getPools(pools []string) ([]string, error) {
 			}
 		}
 		if !found {
-			_ = level.Warn(c.logger).Log("msg", "Pool unavailable", "pool", want)
+			c.logger.Warn("Pool unavailable", "pool", want)
 		}
 	}
 
@@ -216,7 +214,7 @@ func (c *ZFS) publishCollectorMetrics(ctx context.Context, name string, err erro
 	var success float64
 
 	if err != nil {
-		_ = level.Error(c.logger).Log("msg", "Executing collector", "status", "error", "collector", name, "durationSeconds", duration.Seconds(), "err", err)
+		c.logger.Error("Executing collector", "status", "error", "collector", name, "durationSeconds", duration.Seconds(), "err", err)
 		success = 0
 	} else {
 		select {
@@ -226,10 +224,10 @@ func (c *ZFS) publishCollectorMetrics(ctx context.Context, name string, err erro
 			err = nil
 		}
 		if err != nil && err != context.Canceled {
-			_ = level.Warn(c.logger).Log("msg", "Executing collector", "status", "delayed", "collector", name, "durationSeconds", duration.Seconds(), "err", ctx.Err())
+			c.logger.Warn("Executing collector", "status", "delayed", "collector", name, "durationSeconds", duration.Seconds(), "err", ctx.Err())
 			success = 0
 		} else {
-			_ = level.Debug(c.logger).Log("msg", "Executing collector", "status", "ok", "collector", name, "durationSeconds", duration.Seconds())
+			c.logger.Debug("Executing collector", "status", "ok", "collector", name, "durationSeconds", duration.Seconds())
 			success = 1
 		}
 	}

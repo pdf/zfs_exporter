@@ -34,39 +34,39 @@ go install github.com/pdf/zfs_exporter@$version
 ```
 usage: zfs_exporter [<flags>]
 
+
 Flags:
-  -h, --help                 Show context-sensitive help (also try --help-long and --help-man).
-      --collector.dataset-filesystem
-                             Enable the dataset-filesystem collector (default: enabled)
-      --properties.dataset-filesystem="available,logicalused,quota,referenced,used,usedbydataset,written"
-                             Properties to include for the dataset-filesystem collector, comma-separated.
-      --collector.dataset-snapshot
-                             Enable the dataset-snapshot collector (default: disabled)
-      --properties.dataset-snapshot="logicalused,referenced,used,written"
-                             Properties to include for the dataset-snapshot collector, comma-separated.
-      --collector.dataset-volume
-                             Enable the dataset-volume collector (default: enabled)
-      --properties.dataset-volume="available,logicalused,referenced,used,usedbydataset,volsize,written"
-                             Properties to include for the dataset-volume collector, comma-separated.
-      --collector.pool       Enable the pool collector (default: enabled)
-      --properties.pool="allocated,dedupratio,fragmentation,free,freeing,health,leaked,readonly,size"
-                             Properties to include for the pool collector, comma-separated.
-      --web.listen-address=":9134"
-                             Address on which to expose metrics and web interface.
-      --web.telemetry-path="/metrics"
-                             Path under which to expose metrics.
-      --web.disable-exporter-metrics
-                             Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).
-      --deadline=8s          Maximum duration that a collection should run before returning cached data. Should
-                             be set to a value shorter than your scrape timeout duration. The current
-                             collection run will continue and update the cache when complete (default: 8s)
-      --pool=POOL ...        Name of the pool(s) to collect, repeat for multiple pools (default: all pools).
-      --exclude=EXCLUDE ...  Exclude datasets/snapshots/volumes that match the provided regex (e.g.
-                             '^rpool/docker/'), may be specified multiple times.
-      --log.level=info       Only log messages with the given severity or above. One of: [debug, info, warn,
-                             error]
-      --log.format=logfmt    Output format of log messages. One of: [logfmt, json]
-      --version              Show application version.
+  -h, --[no-]help                Show context-sensitive help (also try --help-long and --help-man).
+      --[no-]collector.dataset-filesystem  
+                                 Enable the dataset-filesystem collector (default: enabled)
+      --properties.dataset-filesystem="available,logicalused,quota,referenced,used,usedbydataset,written"  
+                                 Properties to include for the dataset-filesystem collector, comma-separated.
+      --[no-]collector.dataset-snapshot  
+                                 Enable the dataset-snapshot collector (default: disabled)
+      --properties.dataset-snapshot="logicalused,referenced,used,written"  
+                                 Properties to include for the dataset-snapshot collector, comma-separated.
+      --[no-]collector.dataset-volume  
+                                 Enable the dataset-volume collector (default: enabled)
+      --properties.dataset-volume="available,logicalused,referenced,used,usedbydataset,volsize,written"  
+                                 Properties to include for the dataset-volume collector, comma-separated.
+      --[no-]collector.pool      Enable the pool collector (default: enabled)
+      --properties.pool="allocated,dedupratio,fragmentation,free,freeing,health,leaked,readonly,size"  
+                                 Properties to include for the pool collector, comma-separated.
+      --web.telemetry-path="/metrics"  
+                                 Path under which to expose metrics.
+      --[no-]web.disable-exporter-metrics  
+                                 Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).
+      --deadline=8s              Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your scrape timeout duration. The current collection run will continue and update the cache when
+                                 complete (default: 8s)
+      --pool=POOL ...            Name of the pool(s) to collect, repeat for multiple pools (default: all pools).
+      --exclude=EXCLUDE ...      Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.
+      --[no-]web.systemd-socket  Use systemd socket activation listeners instead of port listeners (Linux only).
+      --web.listen-address=:9134 ...  
+                                 Addresses on which to expose metrics and web interface. Repeatable for multiple addresses. Examples: `:9100` or `[::1]:9100` for http, `vsock://:9100` for vsock
+      --web.config.file=""       Path to configuration file that can enable TLS or authentication. See: https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md
+      --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
+      --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
+      --[no-]version             Show application version.
 ```
 
 Collectors that are enabled by default can be negated by prefixing the flag with `--no-*`, ie:
