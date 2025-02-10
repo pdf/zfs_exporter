@@ -1,0 +1,9 @@
+services:
+  zfs_exporter:
+    image: pdf/zfs_exporter
+    privileged: true
+    restart: unless-stopped
+    command: ["--web.disable-exporter-metrics", "--web.listen-address=:9135"]
+    container_name: zfs_exporter
+    ports:
+      - "9135:9135"
