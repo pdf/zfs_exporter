@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -27,6 +28,7 @@ func main() {
 		pools                   = kingpin.Flag("pool", "Name of the pool(s) to collect, repeat for multiple pools (default: all pools).").Strings()
 		excludes                = kingpin.Flag("exclude", "Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.").Strings()
 		toolkitFlags            = kingpinflag.AddFlags(kingpin.CommandLine, ":9134")
+		logFile                 = kingpin.Flag("log.file", "The file path for log output. Use STDOUT for /dev/fd/1 or STDERR for /dev/fd/2").Default("STDERR").String()
 	)
 
 	promslogConfig := &promslog.Config{}
@@ -34,6 +36,20 @@ func main() {
 	kingpin.Version(version.Print("zfs_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
+	var parsedWriter io.Writer
+	if *logFile == "STDERR" {
+		parsedWriter = os.Stderr
+	} else if *logFile == "STDOUT" {
+		parsedWriter = os.Stdout
+	} else {
+		file, err := os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			parsedWriter = os.Stderr
+		} else {
+			parsedWriter = file
+		}
+	}
+	promslogConfig.Writer = parsedWriter
 	logger := promslog.New(promslogConfig)
 
 	logger.Info("Starting zfs_exporter", "version", version.Info())
