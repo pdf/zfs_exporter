@@ -1,3 +1,13 @@
+## [2.3.8](https://github.com/pdf/zfs_exporter/compare/v2.3.7...v2.3.8) (2025-04-20)
+
+
+### Bug Fixes
+
+* **build:** Bump Go version and golangci-lint ([4d46ab3](https://github.com/pdf/zfs_exporter/commit/4d46ab3))
+
+
+
+
 ## [2.3.7](https://github.com/pdf/zfs_exporter/compare/v2.3.6...v2.3.7) (2025-04-20)
 
 
