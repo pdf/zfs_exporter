@@ -77,7 +77,7 @@ func poolNames() ([]string, error) {
 	scanner := bufio.NewScanner(out)
 
 	if err = cmd.Start(); err != nil {
-		return nil, fmt.Errorf("Failed to start command '%s': %w", cmd.String(), err)
+		return nil, fmt.Errorf("failed to start command '%s': %w", cmd.String(), err)
 	}
 
 	for scanner.Scan() {
@@ -86,7 +86,7 @@ func poolNames() ([]string, error) {
 
 	stde, _ := io.ReadAll(stderr)
 	if err = cmd.Wait(); err != nil {
-		return nil, fmt.Errorf("Failed to execute command '%s'; output: '%s' (%w)", cmd.String(), strings.TrimSpace(string(stde)), err)
+		return nil, fmt.Errorf("failed to execute command '%s'; output: '%s' (%w)", cmd.String(), strings.TrimSpace(string(stde)), err)
 	}
 
 	return pools, nil

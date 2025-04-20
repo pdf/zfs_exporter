@@ -2,7 +2,7 @@ package collector
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -20,7 +20,7 @@ zfs_scrape_collector_success{collector="pool"} 0
 
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
 	zfsClient := mock_zfs.NewMockClient(ctrl)
-	zfsClient.EXPECT().PoolNames().Return(nil, fmt.Errorf(`Error returned from PoolNames()`)).Times(1)
+	zfsClient.EXPECT().PoolNames().Return(nil, errors.New(`Error returned from PoolNames()`)).Times(1)
 
 	config := defaultConfig(zfsClient)
 	config.DisableMetrics = false

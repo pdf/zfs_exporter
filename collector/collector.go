@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/alecthomas/kingpin/v2"
@@ -122,7 +123,7 @@ func registerCollector(collector string, isDefaultEnabled bool, defaultProps str
 
 	enabledFlagName := fmt.Sprintf("collector.%s", collector)
 	enabledFlagHelp := fmt.Sprintf("Enable the %s collector (default: %s)", collector, helpDefaultState)
-	enabledDefaultValue := fmt.Sprintf("%t", isDefaultEnabled)
+	enabledDefaultValue := strconv.FormatBool(isDefaultEnabled)
 
 	propsFlagName := fmt.Sprintf("properties.%s", collector)
 	propsFlagHelp := fmt.Sprintf("Properties to include for the %s collector, comma-separated.", collector)

@@ -9,10 +9,8 @@ import (
 	"strings"
 )
 
-var (
-	// ErrInvalidOutput is returned on unparseable CLI output
-	ErrInvalidOutput = errors.New(`Invalid output executing command`)
-)
+// ErrInvalidOutput is returned on unparseable CLI output
+var ErrInvalidOutput = errors.New(`invalid output executing command`)
 
 // Client is the primary entrypoint
 type Client interface {
@@ -49,8 +47,7 @@ type handler interface {
 	processLine(pool string, line []string) error
 }
 
-type clientImpl struct {
-}
+type clientImpl struct{}
 
 func (z clientImpl) PoolNames() ([]string, error) {
 	return poolNames()
@@ -83,12 +80,12 @@ func execute(pool string, h handler, cmd string, args ...string) error {
 	r.FieldsPerRecord = 3
 
 	if err = c.Start(); err != nil {
-		return fmt.Errorf("Failed to start command '%s': %w", c.String(), err)
+		return fmt.Errorf("failed to start command '%s': %w", c.String(), err)
 	}
 
 	for {
 		line, err := r.Read()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -101,7 +98,7 @@ func execute(pool string, h handler, cmd string, args ...string) error {
 
 	stde, _ := io.ReadAll(stderr)
 	if err = c.Wait(); err != nil {
-		return fmt.Errorf("Failed to execute command '%s'; output: '%s' (%w)", c.String(), strings.TrimSpace(string(stde)), err)
+		return fmt.Errorf("failed to execute command '%s'; output: '%s' (%w)", c.String(), strings.TrimSpace(string(stde)), err)
 	}
 	return nil
 }
