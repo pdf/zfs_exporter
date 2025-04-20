@@ -1,3 +1,13 @@
+## [2.3.7](https://github.com/pdf/zfs_exporter/compare/v2.3.6...v2.3.7) (2025-04-20)
+
+
+### Bug Fixes
+
+* **deps:** Bump dependencies ([6af54d2](https://github.com/pdf/zfs_exporter/commit/6af54d2))
+
+
+
+
 ## [2.3.6](https://github.com/pdf/zfs_exporter/compare/v2.3.5...v2.3.6) (2025-01-18)
 
 
