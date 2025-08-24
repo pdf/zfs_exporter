@@ -154,6 +154,13 @@ var (
 				transformNumeric,
 				datasetLabels...,
 			),
+			`creation`: newProperty(
+				subsystemDataset,
+				`written_bytes`,
+				`The unix timestamp when this dataset was created.`,
+				transformNumeric,
+				datasetLabels...,
+			),
 		},
 	}
 )
