@@ -24,6 +24,7 @@ var (
 				`allocated_bytes`,
 				`Amount of storage in bytes used within the pool.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`dedupratio`: newProperty(
@@ -31,6 +32,7 @@ var (
 				`deduplication_ratio`,
 				`The ratio of deduplicated size vs undeduplicated size for data in this pool.`,
 				transformMultiplier,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`capacity`: newProperty(
@@ -38,6 +40,7 @@ var (
 				`capacity_ratio`,
 				`Ratio of pool space used.`,
 				transformPercentage,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`expandsize`: newProperty(
@@ -45,6 +48,7 @@ var (
 				`expand_size_bytes`,
 				`Amount of uninitialized space within the pool or device that can be used to increase the total capacity of the pool.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`fragmentation`: newProperty(
@@ -52,6 +56,7 @@ var (
 				`fragmentation_ratio`,
 				`The fragmentation ratio of the pool.`,
 				transformPercentage,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`free`: newProperty(
@@ -59,6 +64,7 @@ var (
 				`free_bytes`,
 				`The amount of free space in bytes available in the pool.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`freeing`: newProperty(
@@ -66,6 +72,7 @@ var (
 				`freeing_bytes`,
 				`The amount of space in bytes remaining to be freed following the destruction of a file system or snapshot.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`health`: newProperty(
@@ -81,6 +88,7 @@ var (
 					poolSuspended, zfs.PoolSuspended,
 				),
 				transformHealthCode,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`leaked`: newProperty(
@@ -88,6 +96,7 @@ var (
 				`leaked_bytes`,
 				`Number of leaked bytes in the pool.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`readonly`: newProperty(
@@ -95,6 +104,7 @@ var (
 				`readonly`,
 				`Read-only status of the pool [0: read-write, 1: read-only].`,
 				transformBool,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 			`size`: newProperty(
@@ -102,6 +112,7 @@ var (
 				`size_bytes`,
 				`Total size in bytes of the storage pool.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				poolLabels...,
 			),
 		},

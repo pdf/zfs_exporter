@@ -74,6 +74,7 @@ type property struct {
 	name      string
 	desc      *prometheus.Desc
 	transform transformFunc
+	kind      prometheus.ValueType
 }
 
 func (p property) push(ch chan<- metric, value string, labelValues ...string) error {
@@ -85,7 +86,7 @@ func (p property) push(ch chan<- metric, value string, labelValues ...string) er
 		name: expandMetricName(p.name, labelValues...),
 		prometheus: prometheus.MustNewConstMetric(
 			p.desc,
-			prometheus.GaugeValue,
+			p.kind,
 			v,
 			labelValues...,
 		),
@@ -108,6 +109,7 @@ func (p *propertyStore) find(name string) (property, error) {
 			name,
 			propertyUnsupportedDesc,
 			transformNumeric,
+			prometheus.GaugeValue,
 			p.defaultLabels...,
 		)
 		return prop, errUnsupportedProperty
@@ -142,11 +144,12 @@ func expandMetricName(prefix string, context ...string) string {
 	return strings.Join(append(context, prefix), `-`)
 }
 
-func newProperty(subsystem, metricName, helpText string, transform transformFunc, labels ...string) property {
+func newProperty(subsystem, metricName, helpText string, transform transformFunc, kind prometheus.ValueType, labels ...string) property {
 	name := prometheus.BuildFQName(namespace, subsystem, metricName)
 	return property{
 		name:      name,
 		desc:      prometheus.NewDesc(name, helpText, labels, nil),
 		transform: transform,
+		kind:      kind,
 	}
 }

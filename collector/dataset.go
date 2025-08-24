@@ -26,6 +26,7 @@ var (
 				`available_bytes`,
 				`The amount of space in bytes available to the dataset and all its children.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`compressratio`: newProperty(
@@ -33,6 +34,7 @@ var (
 				`compression_ratio`,
 				`The ratio of compressed size vs uncompressed size for this dataset.`,
 				transformMultiplier,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`logicalused`: newProperty(
@@ -40,6 +42,7 @@ var (
 				`logical_used_bytes`,
 				`The amount of space in bytes that is "logically" consumed by this dataset and all its descendents. See the "used_bytes" property.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`logicalreferenced`: newProperty(
@@ -47,6 +50,7 @@ var (
 				`logical_referenced_bytes`,
 				`The amount of space that is "logically" accessible by this dataset. See the "referenced_bytes" property.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`quota`: newProperty(
@@ -54,6 +58,7 @@ var (
 				`quota_bytes`,
 				`The maximum amount of space in bytes this dataset and its descendents can consume.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`refcompressratio`: newProperty(
@@ -61,6 +66,7 @@ var (
 				`referenced_compression_ratio`,
 				`The ratio of compressed size vs uncompressed size for the referenced space of this dataset. See also the "compression_ratio" property.`,
 				transformMultiplier,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`referenced`: newProperty(
@@ -68,6 +74,7 @@ var (
 				`referenced_bytes`,
 				`The amount of data in bytes that is accessible by this dataset, which may or may not be shared with other datasets in the pool.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`refquota`: newProperty(
@@ -75,6 +82,7 @@ var (
 				`referenced_quota_bytes`,
 				`The maximum amount of space in bytes this dataset can consume.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`refreservation`: newProperty(
@@ -82,6 +90,7 @@ var (
 				`referenced_reservation_bytes`,
 				`The minimum amount of space in bytes guaranteed to this dataset.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`reservation`: newProperty(
@@ -89,6 +98,7 @@ var (
 				`reservation_bytes`,
 				`The minimum amount of space in bytes guaranteed to a dataset and its descendants.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`snapshot_count`: newProperty(
@@ -96,6 +106,7 @@ var (
 				`snapshot_count_total`,
 				`The total number of snapshots that exist under this location in the dataset tree. This value is only available when a snapshot_limit has been set somewhere in the tree under which the dataset resides.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`snapshot_limit`: newProperty(
@@ -103,6 +114,7 @@ var (
 				`snapshot_limit_total`,
 				`The total limit on the number of snapshots that can be created on a dataset and its descendents.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`used`: newProperty(
@@ -110,6 +122,7 @@ var (
 				`used_bytes`,
 				`The amount of space in bytes consumed by this dataset and all its descendents.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`usedbychildren`: newProperty(
@@ -117,6 +130,7 @@ var (
 				`used_by_children_bytes`,
 				`The amount of space in bytes used by children of this dataset, which would be freed if all the dataset's children were destroyed.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`usedbydataset`: newProperty(
@@ -124,6 +138,7 @@ var (
 				`used_by_dataset_bytes`,
 				`The amount of space in bytes used by this dataset itself, which would be freed if the dataset were destroyed.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`usedbyrefreservation`: newProperty(
@@ -131,6 +146,7 @@ var (
 				`used_by_referenced_reservation_bytes`,
 				`The amount of space in bytes used by a refreservation set on this dataset, which would be freed if the refreservation was removed.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`usedbysnapshots`: newProperty(
@@ -138,6 +154,7 @@ var (
 				`used_by_snapshot_bytes`,
 				`The amount of space in bytes consumed by snapshots of this dataset.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`volsize`: newProperty(
@@ -145,6 +162,7 @@ var (
 				`volume_size_bytes`,
 				`The logical size in bytes of this volume.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`written`: newProperty(
@@ -152,6 +170,7 @@ var (
 				`written_bytes`,
 				`The amount of referenced space in bytes written to this dataset since the previous snapshot.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 			`creation`: newProperty(
@@ -159,6 +178,7 @@ var (
 				`creation_timestamp`,
 				`The unix timestamp when this dataset was created.`,
 				transformNumeric,
+				prometheus.GaugeValue,
 				datasetLabels...,
 			),
 		},
