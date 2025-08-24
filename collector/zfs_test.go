@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pdf/zfs_exporter/v2/zfs/mock_zfs"
+	"go.uber.org/mock/gomock"
 )
 
 func TestZFSCollectInvalidPools(t *testing.T) {

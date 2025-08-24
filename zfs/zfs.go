@@ -1,3 +1,5 @@
+//go:generate go tool go.uber.org/mock/mockgen -source=zfs.go -destination=mock_zfs/mock_zfs.go -package=mock_zfs
+
 package zfs
 
 import (
