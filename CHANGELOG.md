@@ -1,3 +1,13 @@
+## [2.3.9](https://github.com/pdf/zfs_exporter/compare/v2.3.8...v2.3.9) (2025-08-24)
+
+
+### Bug Fixes
+
+* **props:** Add support for dataset `creation` property ([a1c90f4](https://github.com/pdf/zfs_exporter/commit/a1c90f4)), closes [#57](https://github.com/pdf/zfs_exporter/issues/57)
+
+
+
+
 ## [2.3.8](https://github.com/pdf/zfs_exporter/compare/v2.3.7...v2.3.8) (2025-04-20)
 
 
