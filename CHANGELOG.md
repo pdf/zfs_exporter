@@ -1,3 +1,13 @@
+## [2.3.10](https://github.com/pdf/zfs_exporter/compare/v2.3.9...v2.3.10) (2025-08-24)
+
+
+### Bug Fixes
+
+* **props:** Fix filesystem creation property ([9a6beb3](https://github.com/pdf/zfs_exporter/commit/9a6beb3)), closes [#57](https://github.com/pdf/zfs_exporter/issues/57)
+
+
+
+
 ## [2.3.9](https://github.com/pdf/zfs_exporter/compare/v2.3.8...v2.3.9) (2025-08-24)
 
 
