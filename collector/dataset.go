@@ -156,7 +156,7 @@ var (
 			),
 			`creation`: newProperty(
 				subsystemDataset,
-				`written_bytes`,
+				`creation_timestamp`,
 				`The unix timestamp when this dataset was created.`,
 				transformNumeric,
 				datasetLabels...,
