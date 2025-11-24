@@ -1,3 +1,13 @@
+## [2.3.11](https://github.com/pdf/zfs_exporter/compare/v2.3.10...v2.3.11) (2025-11-24)
+
+
+### Bug Fixes
+
+* **security:** Bump deps for CVE-2025-58181 ([12cf70c](https://github.com/pdf/zfs_exporter/commit/12cf70c))
+
+
+
+
 ## [2.3.10](https://github.com/pdf/zfs_exporter/compare/v2.3.9...v2.3.10) (2025-08-24)
 
 
