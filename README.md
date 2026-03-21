@@ -26,7 +26,7 @@ Installation can also be accomplished using `go install`:
 
 ```bash
 version=latest # or a specific version tag
-go install github.com/pdf/zfs_exporter@$version
+go install github.com/pdf/zfs_exporter/v2@$version
 ```
 
 ## Usage
