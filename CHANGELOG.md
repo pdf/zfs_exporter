@@ -1,3 +1,13 @@
+## [2.3.12](https://github.com/pdf/zfs_exporter/compare/v2.3.11...v2.3.12) (2026-04-04)
+
+
+### Bug Fixes
+
+* **docs:** Update installation command for zfs_exporter to v2 ([#66](https://github.com/pdf/zfs_exporter/issues/66)) ([1769a9e](https://github.com/pdf/zfs_exporter/commit/1769a9e))
+
+
+
+
 ## [2.3.11](https://github.com/pdf/zfs_exporter/compare/v2.3.10...v2.3.11) (2025-11-24)
 
 
