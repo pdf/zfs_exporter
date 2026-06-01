@@ -52,6 +52,10 @@ Flags:
       --[no-]collector.pool      Enable the pool collector (default: enabled)
       --properties.pool="allocated,dedupratio,fragmentation,free,freeing,health,leaked,readonly,size"  
                                  Properties to include for the pool collector, comma-separated.
+      --[no-]collector.pool-scrub  
+                                 Enable the pool-scrub collector (default: enabled)
+      --properties.pool-scrub="state,errors,repaired_bytes,last_completed,total_bytes,scanned_bytes,issued_bytes,rate_bytes_per_second"  
+                                 Properties to include for the pool-scrub collector, comma-separated.
       --web.telemetry-path="/metrics"  
                                  Path under which to expose metrics.
       --[no-]web.disable-exporter-metrics  

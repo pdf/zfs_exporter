@@ -140,6 +140,21 @@ func (mr *MockPoolMockRecorder) Properties(props ...any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Properties", reflect.TypeOf((*MockPool)(nil).Properties), props...)
 }
 
+// Scan mocks base method.
+func (m *MockPool) Scan() (zfs.PoolScan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Scan")
+	ret0, _ := ret[0].(zfs.PoolScan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Scan indicates an expected call of Scan.
+func (mr *MockPoolMockRecorder) Scan() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockPool)(nil).Scan))
+}
+
 // MockPoolProperties is a mock of PoolProperties interface.
 type MockPoolProperties struct {
 	ctrl     *gomock.Controller

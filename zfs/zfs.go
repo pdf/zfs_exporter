@@ -9,6 +9,7 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // ErrInvalidOutput is returned on unparseable CLI output
@@ -25,11 +26,53 @@ type Client interface {
 type Pool interface {
 	Name() string
 	Properties(props ...string) (PoolProperties, error)
+	Scan() (PoolScan, error)
 }
 
 // PoolProperties provides access to the properties for a pool
 type PoolProperties interface {
 	Properties() map[string]string
+}
+
+// ScanFunction enum contains scan function text
+type ScanFunction string
+
+const (
+	// ScanFunctionNone enum entry
+	ScanFunctionNone ScanFunction = `none`
+	// ScanFunctionScrub enum entry
+	ScanFunctionScrub ScanFunction = `scrub`
+	// ScanFunctionResilver enum entry
+	ScanFunctionResilver ScanFunction = `resilver`
+)
+
+// ScanState enum contains scan state text
+type ScanState string
+
+const (
+	// ScanStateNone enum entry
+	ScanStateNone ScanState = `none`
+	// ScanStateInProgress enum entry
+	ScanStateInProgress ScanState = `in_progress`
+	// ScanStateFinished enum entry
+	ScanStateFinished ScanState = `finished`
+	// ScanStateCanceled enum entry
+	ScanStateCanceled ScanState = `canceled`
+	// ScanStatePaused enum entry
+	ScanStatePaused ScanState = `paused`
+)
+
+// PoolScan describes the most recent scrub or resilver for a pool
+type PoolScan struct {
+	Function    ScanFunction
+	State       ScanState
+	Errors      uint64
+	Repaired    uint64
+	CompletedAt time.Time
+	Total       uint64
+	Scanned     uint64
+	Issued      uint64
+	Rate        uint64
 }
 
 // Datasets allows querying properties for datasets in a pool
