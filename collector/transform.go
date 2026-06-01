@@ -19,6 +19,38 @@ const (
 	poolSuspended
 )
 
+type poolScanStateCode int
+
+const (
+	scanStateNone poolScanStateCode = iota
+	scanStateScrubInProgress
+	scanStateScrubFinished
+	scanStateScrubCanceled
+	scanStateScrubPaused
+	scanStateResilverInProgress
+	scanStateResilverFinished
+)
+
+func (c poolScanStateCode) label() string {
+	switch c {
+	case scanStateNone:
+		return `none`
+	case scanStateScrubInProgress:
+		return `scrub_in_progress`
+	case scanStateScrubFinished:
+		return `scrub_finished`
+	case scanStateScrubCanceled:
+		return `scrub_canceled`
+	case scanStateScrubPaused:
+		return `scrub_paused`
+	case scanStateResilverInProgress:
+		return `resilver_in_progress`
+	case scanStateResilverFinished:
+		return `resilver_finished`
+	}
+	return ``
+}
+
 func transformNumeric(value string) (float64, error) {
 	if value == `-` || value == `none` {
 		return 0, nil
@@ -48,6 +80,26 @@ func transformHealthCode(status string) (float64, error) {
 	}
 
 	return float64(result), nil
+}
+
+func transformScanStateCode(value string) (float64, error) {
+	switch value {
+	case `none:none`:
+		return float64(scanStateNone), nil
+	case `scrub:in_progress`:
+		return float64(scanStateScrubInProgress), nil
+	case `scrub:finished`:
+		return float64(scanStateScrubFinished), nil
+	case `scrub:canceled`:
+		return float64(scanStateScrubCanceled), nil
+	case `scrub:paused`:
+		return float64(scanStateScrubPaused), nil
+	case `resilver:in_progress`:
+		return float64(scanStateResilverInProgress), nil
+	case `resilver:finished`:
+		return float64(scanStateResilverFinished), nil
+	}
+	return -1, fmt.Errorf(`unknown scan state: %s`, value)
 }
 
 func transformBool(value string) (float64, error) {
