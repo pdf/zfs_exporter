@@ -1,3 +1,13 @@
+## [2.4.1](https://github.com/pdf/zfs_exporter/compare/v2.4.0...v2.4.1) (2026-08-10)
+
+
+### Bug Fixes
+
+* **collector:** handle keystatus=- ([6fa0461](https://github.com/pdf/zfs_exporter/commit/6fa0461))
+
+
+
+
 # [2.4.0](https://github.com/pdf/zfs_exporter/compare/v2.3.12...v2.4.0) (2026-08-10)
 
 
