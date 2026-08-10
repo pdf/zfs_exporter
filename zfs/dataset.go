@@ -16,6 +16,15 @@ const (
 	DatasetSnapshot DatasetKind = `snapshot`
 )
 
+// Keystatus enum contains keystatus string value
+type Keystatus string
+
+const (
+	KeystatusNone        Keystatus = `none`
+	KeystatusAvailable   Keystatus = `available`
+	KeystatusUnavailable Keystatus = `unavailable`
+)
+
 type datasetsImpl struct {
 	pool string
 	kind DatasetKind

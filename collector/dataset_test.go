@@ -30,7 +30,7 @@ func TestDatsetMetrics(t *testing.T) {
 			name:           `all metrics`,
 			kinds:          []zfs.DatasetKind{zfs.DatasetFilesystem},
 			pools:          []string{`testpool`},
-			propsRequested: []string{`available`, `compressratio`, `logicalused`, `logicalreferenced`, `quota`, `refcompressratio`, `referenced`, `refquota`, `refreservation`, `reservation`, `snapshot_count`, `snapshot_limit`, `used`, `usedbychildren`, `usedbydataset`, `usedbyrefreservation`, `usedbysnapshots`, `volsize`, `written`, `creation`},
+			propsRequested: []string{`available`, `compressratio`, `logicalused`, `logicalreferenced`, `quota`, `refcompressratio`, `referenced`, `refquota`, `refreservation`, `reservation`, `snapshot_count`, `snapshot_limit`, `used`, `usedbychildren`, `usedbydataset`, `usedbyrefreservation`, `usedbysnapshots`, `volsize`, `written`, `creation`, `keystatus`},
 			metricNames:    []string{`zfs_dataset_available_bytes`, `zfs_dataset_compression_ratio`, `zfs_dataset_logical_used_bytes`, `zfs_dataset_logical_referenced_bytes`, `zfs_dataset_quota_bytes`, `zfs_dataset_referenced_compression_ratio`, `zfs_dataset_referenced_bytes`, `zfs_dataset_referenced_quota_bytes`, `zfs_dataset_reservation_bytes`, `zfs_dataset_snapshot_count_total`, `zfs_datset_snapshot_limit_total`, `zfs_dataset_used_bytes`, `zfs_dataset_used_by_children_bytes`, `zfs_dataset_used_by_datset_bytes`, `zfs_datset_used_by_referenced_reservation_bytes`, `zfs_dataset_used_by_snapshot_bytes`, `zfs_dataset_volume_size_bytes`, `zfs_dataset_written_bytes`},
 			propsResults: map[string][]datasetResults{
 				`testpool`: {
@@ -56,6 +56,7 @@ func TestDatsetMetrics(t *testing.T) {
 							`volsize`:              `1024`,
 							`written`:              `1024`,
 							`creation`:             `1756033110`,
+							`keystatus`:            `available`,
 						},
 					},
 				},
@@ -105,6 +106,9 @@ zfs_dataset_written_bytes{name="testpool/test",pool="testpool",type="filesystem"
 # HELP zfs_dataset_creation_timestamp The unix timestamp when this dataset was created.
 # TYPE zfs_dataset_creation_timestamp gauge
 zfs_dataset_creation_timestamp{name="testpool/test",pool="testpool",type="filesystem"} 1756033110
+# HELP zfs_dataset_keystatus Indicates if the encryption key is currently loaded [0: none, 1: available, 2: unavailable]
+# TYPE zfs_dataset_keystatus gauge
+zfs_dataset_keystatus{name="testpool/test",pool="testpool",type="filesystem"} 1
 `,
 		},
 		{
