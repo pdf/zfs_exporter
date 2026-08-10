@@ -61,6 +61,8 @@ func transformHealthCode(status string) (float64, error) {
 func transformKeystatus(status string) (float64, error) {
 	var result keystatusCode
 	switch zfs.Keystatus(status) {
+	case `-`:
+		fallthrough
 	case zfs.KeystatusNone:
 		result = keystatusNone
 	case zfs.KeystatusAvailable:
