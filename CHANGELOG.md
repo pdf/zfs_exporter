@@ -1,3 +1,13 @@
+# [2.4.0](https://github.com/pdf/zfs_exporter/compare/v2.3.12...v2.4.0) (2026-08-10)
+
+
+### Features
+
+* **collector:** collect keystatus property ([850c435](https://github.com/pdf/zfs_exporter/commit/850c435))
+
+
+
+
 ## [2.3.12](https://github.com/pdf/zfs_exporter/compare/v2.3.11...v2.3.12) (2026-04-04)
 
 
