@@ -181,6 +181,18 @@ var (
 				prometheus.GaugeValue,
 				datasetLabels...,
 			),
+			`keystatus`: newProperty(
+				subsystemDataset,
+				`keystatus`,
+				fmt.Sprintf("Indicates if the encryption key is currently loaded [%d: %s, %d: %s, %d: %s].",
+					keystatusNone, zfs.KeystatusNone,
+					keystatusAvailable, zfs.KeystatusAvailable,
+					keystatusUnavailable, zfs.KeystatusUnavailable,
+				),
+				transformKeystatus,
+				prometheus.GaugeValue,
+				datasetLabels...,
+			),
 		},
 	}
 )

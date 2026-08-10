@@ -19,6 +19,14 @@ const (
 	poolSuspended
 )
 
+type keystatusCode int
+
+const (
+	keystatusNone keystatusCode = iota
+	keystatusAvailable
+	keystatusUnavailable
+)
+
 func transformNumeric(value string) (float64, error) {
 	if value == `-` || value == `none` {
 		return 0, nil
@@ -45,6 +53,22 @@ func transformHealthCode(status string) (float64, error) {
 		result = poolSuspended
 	default:
 		return -1, fmt.Errorf(`unknown pool heath status: %s`, status)
+	}
+
+	return float64(result), nil
+}
+
+func transformKeystatus(status string) (float64, error) {
+	var result keystatusCode
+	switch zfs.Keystatus(status) {
+	case zfs.KeystatusNone:
+		result = keystatusNone
+	case zfs.KeystatusAvailable:
+		result = keystatusAvailable
+	case zfs.KeystatusUnavailable:
+		result = keystatusUnavailable
+	default:
+		return -1, fmt.Errorf(`unknown keystatus: %s`, status)
 	}
 
 	return float64(result), nil
