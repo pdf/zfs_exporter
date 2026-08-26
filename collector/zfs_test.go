@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/pdf/zfs_exporter/v2/zfs/mock_zfs"
+	"github.com/jmcgover/zfs_exporter/v2/zfs/mock_zfs"
 	"go.uber.org/mock/gomock"
 )
 

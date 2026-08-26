@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pdf/zfs_exporter/v2/collector"
-	"github.com/pdf/zfs_exporter/v2/zfs"
+	"github.com/jmcgover/zfs_exporter/v2/collector"
+	"github.com/jmcgover/zfs_exporter/v2/zfs"
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -39,6 +39,32 @@ func main() {
 
 	logger.Info("Starting zfs_exporter", "version", version.Info())
 	logger.Info("Build context", "context", version.BuildContext())
+
+	// ZFS Version
+	zfs_version, err := zfs.GetZFSVersionViaJSON(logger)
+	if err != nil {
+		logger.Error("Error getting ZFS version", "err", err)
+		os.Exit(7)
+	}
+	logger.Info("ZFS Version", "version", *zfs_version)
+
+	// Pool Status
+	pool_name_status_map, err := zfs.ZpoolStatusViaJSON(logger)
+	if err != nil {
+		logger.Error("Error getting pool status", "err", err)
+		os.Exit(8)
+	}
+	logger.Debug("Num Pools", "num_pools", len(*pool_name_status_map))
+	for pool_name, pool_status := range *pool_name_status_map {
+		logger.Debug("Pool Name", "name", pool_name)
+		logger.Debug("Pool Vdevs", "num_vdevs", len(pool_status.Vdevs))
+		logger.Debug("Pool Status", "status", pool_status)
+		logger.Debug("Pool ScanStats", "scan_stats", pool_status.ScanStats)
+		for vdev_name, vdev_status := range pool_status.Vdevs {
+			logger.Debug("Vdev Name", "name", vdev_name)
+			logger.Debug("Vdev Status", "status", vdev_status)
+		}
+	}
 
 	c, err := collector.NewZFS(collector.ZFSConfig{
 		DisableMetrics: *metricsExporterDisabled,
