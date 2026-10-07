@@ -1,3 +1,13 @@
+## [2.4.2](https://github.com/pdf/zfs_exporter/compare/v2.4.1...v2.4.2) (2026-10-07)
+
+
+### Bug Fixes
+
+* **deps:** Bump deps to supported Go version ([a244acc](https://github.com/pdf/zfs_exporter/commit/a244acc)), closes [#71](https://github.com/pdf/zfs_exporter/issues/71)
+
+
+
+
 ## [2.4.1](https://github.com/pdf/zfs_exporter/compare/v2.4.0...v2.4.1) (2026-08-10)
 
 
