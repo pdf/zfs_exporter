@@ -12,7 +12,7 @@ package mock_zfs
 import (
 	reflect "reflect"
 
-	zfs "github.com/pdf/zfs_exporter/v2/zfs"
+	zfs "github.com/jmcgover/zfs_exporter/v2/zfs"
 	gomock "go.uber.org/mock/gomock"
 )
 

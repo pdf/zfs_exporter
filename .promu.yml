@@ -3,7 +3,7 @@ go:
   # .circle/config.yml should also be updated.
   version: 1.23
 repository:
-  path: github.com/pdf/zfs_exporter/v2
+  path: github.com/jmcgover/zfs_exporter/v2
 build:
   flags: -a -tags netgo
   ldflags: |

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pdf/zfs_exporter/v2/zfs"
+	"github.com/jmcgover/zfs_exporter/v2/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

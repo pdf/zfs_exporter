@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/pdf/zfs_exporter/v2/zfs"
+	"github.com/jmcgover/zfs_exporter/v2/zfs"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
