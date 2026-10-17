@@ -50,6 +50,40 @@ config:
 				Total:    uint64(30.2 * tib),
 				Scanned:  uint64(10.4 * tib),
 				Issued:   uint64(7.60 * tib),
+				Rate:     uint64(635 * mib),
+				Repaired: 0,
+			},
+		},
+		{
+			name: `metadata scan finished, only issue rate printed`,
+			output: "  pool: vault\n" +
+				" state: DEGRADED\n" +
+				"  scan: resilver in progress since Thu Oct 15 15:17:46 2026\n" +
+				"\t43.4T / 43.4T scanned, 39.2T / 43.4T issued at 302M/s\n" +
+				"\t9.37T resilvered, 90.33% done, 04:03:01 to go\n" +
+				"config:\n",
+			expected: PoolScan{
+				Function: ScanFunctionResilver,
+				State:    ScanStateInProgress,
+				Total:    uint64(43.4 * tib),
+				Scanned:  uint64(43.4 * tib),
+				Issued:   uint64(39.2 * tib),
+				Rate:     uint64(302 * mib),
+				Repaired: uint64(9.37 * tib),
+			},
+		},
+		{
+			name: `scan rate only while issuing has not started`,
+			output: "  pool: tank\n" +
+				"  scan: scrub in progress since Mon Jun  1 02:00:02 2026\n" +
+				"\t10.4T / 30.2T scanned at 864M/s, 0B / 30.2T issued\n" +
+				"\t0B repaired, 0.00% done, no estimated completion time\n",
+			expected: PoolScan{
+				Function: ScanFunctionScrub,
+				State:    ScanStateInProgress,
+				Total:    uint64(30.2 * tib),
+				Scanned:  uint64(10.4 * tib),
+				Issued:   0,
 				Rate:     uint64(864 * mib),
 				Repaired: 0,
 			},
@@ -66,7 +100,7 @@ config:
 				Total:    33200000000000,
 				Scanned:  11428000000000,
 				Issued:   7600000000000,
-				Rate:     864000000,
+				Rate:     635000000,
 				Repaired: 4096,
 			},
 		},

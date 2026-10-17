@@ -137,8 +137,11 @@ func newPoolPropertiesImpl() *poolPropertiesImpl {
 }
 
 var (
-	scanCompletedRe    = regexp.MustCompile(`^(scrub repaired|resilvered) (\d+)B? in .+ with (\d+) errors on (.+)$`)
-	scanProgressPartRe = regexp.MustCompile(`^(\S+)\s*/\s*(\S+)\s+(scanned|issued)\s+at\s+(\S+?)/s$`)
+	scanCompletedRe = regexp.MustCompile(`^(scrub repaired|resilvered) (\d+)B? in .+ with (\d+) errors on (.+)$`)
+	// Rate is optional. Once the metadata pass finishes, ZFS prints
+	// "43.4T / 43.4T scanned" with no "at N/s", and only the issued
+	// clause carries the live rate.
+	scanProgressPartRe = regexp.MustCompile(`^(\S+)\s*/\s*(\S+)\s+(scanned|issued)(?:\s+at\s+(\S+?)/s)?$`)
 )
 
 func parsePoolScan(out []byte) (PoolScan, error) {
@@ -227,28 +230,60 @@ func parseScanProgressLine(line string, scan *PoolScan) {
 		if m := scanProgressPartRe.FindStringSubmatch(part); m != nil {
 			done, derr := parseScanBytes(m[1])
 			total, terr := parseScanBytes(m[2])
-			rate, rerr := parseScanBytes(m[4])
-			if derr != nil || terr != nil || rerr != nil {
+			if derr != nil || terr != nil {
 				continue
+			}
+			var rate uint64
+			hasRate := false
+			if m[4] != `` {
+				parsed, rerr := parseScanBytes(m[4])
+				if rerr != nil {
+					continue
+				}
+				rate = parsed
+				hasRate = true
 			}
 			if m[3] == `scanned` {
 				scan.Scanned = done
-				scan.Total = total
-				scan.Rate = rate
-			} else {
-				scan.Issued = done
 				if scan.Total == 0 {
 					scan.Total = total
+				}
+				// Keep a scan rate only until an issue rate replaces it.
+				// zpool's ETA uses the issue rate.
+				if hasRate && scan.Rate == 0 {
+					scan.Rate = rate
+				}
+			} else {
+				scan.Issued = done
+				if total > 0 {
+					scan.Total = total
+				}
+				if hasRate {
+					scan.Rate = rate
 				}
 			}
 			continue
 		}
-		if strings.HasSuffix(part, ` repaired`) {
-			if v, err := parseScanBytes(strings.TrimSuffix(part, ` repaired`)); err == nil {
-				scan.Repaired = v
-			}
+		if n, ok := cutRepairedBytes(part); ok {
+			scan.Repaired = n
 		}
 	}
+}
+
+// cutRepairedBytes reads the processed-byte clause. A scrub prints
+// "0B repaired"; a resilver prints "9.37T resilvered".
+func cutRepairedBytes(part string) (uint64, bool) {
+	for _, suffix := range []string{` repaired`, ` resilvered`} {
+		if !strings.HasSuffix(part, suffix) {
+			continue
+		}
+		n, err := parseScanBytes(strings.TrimSuffix(part, suffix))
+		if err != nil {
+			return 0, false
+		}
+		return n, true
+	}
+	return 0, false
 }
 
 func parseScanBytes(s string) (uint64, error) {
