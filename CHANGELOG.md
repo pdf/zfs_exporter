@@ -1,3 +1,11 @@
+### [2.4.3](https://github.com/pdf/zfs_exporter/compare/v2.4.2...v2.4.3) (2026-10-17)
+
+
+### Bug Fixes
+
+* **build:** update promu, Makefile.common and workflow actions ([f4be5cf](https://github.com/pdf/zfs_exporter/commit/f4be5cf4024084b375169faae0f342cf7c3fadc3))
+
+
 ## [2.4.2](https://github.com/pdf/zfs_exporter/compare/v2.4.1...v2.4.2) (2026-10-07)
 
 
