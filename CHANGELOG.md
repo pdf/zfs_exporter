@@ -1,3 +1,12 @@
+## [2.5.0](https://github.com/pdf/zfs_exporter/compare/v2.4.3...v2.5.0) (2026-10-17)
+
+
+### Features
+
+* **container:** Add a container build ([a5d2f9e](https://github.com/pdf/zfs_exporter/commit/a5d2f9eb04a51b3c6c09134d555dc2bc4f077750))
+* **container:** Publish a multi-arch image to GHCR ([b4faa70](https://github.com/pdf/zfs_exporter/commit/b4faa7079bad3d799b92f8ec45bcd1bde650812e))
+
+
 ### [2.4.3](https://github.com/pdf/zfs_exporter/compare/v2.4.2...v2.4.3) (2026-10-17)
 
 
