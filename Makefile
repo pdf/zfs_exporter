@@ -12,8 +12,9 @@
 # limitations under the License.
 
 # Needs to be defined before including Makefile.common to auto-generate targets
-DOCKER_ARCHS ?= amd64 armv7 arm64 ppc64le s390x
-DOCKER_IMAGE_NAME ?= zfs-exporter
+DOCKER_ARCHS ?= amd64 arm64
+DOCKER_IMAGE_NAME ?= zfs_exporter
+DOCKER_REPO ?= ghcr.io/pdf
 
 .PHONY: all
 all:: test build

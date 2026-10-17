@@ -83,31 +83,79 @@ zfs_exporter --no-collector.dataset-filesystem
 
 ## Container
 
-The image runs on Linux only, and contains nothing but the exporter: with `--host-root=/host` (the image's default) it runs the host's own `zpool` and `zfs`, chrooted into the host's root filesystem, so the CLI always matches the host's kernel module whatever its ZFS version or distribution. It needs:
+The image runs on Linux only, and contains nothing but the exporter: with `--host-root=/host` (the image's default) it runs the host's own `zpool` and `zfs`, chrooted into the host's root filesystem, so the CLI always matches the host's kernel module whatever its ZFS version or distribution. Inside the chroot, each command runs as `nobody` (`--host-root.uid` and `--host-root.gid`), and `zpool` and `zfs` are found on `--host-root.path`, which covers `/usr/local`, merged and unmerged `/usr` layouts and NixOS.
+
+The container needs:
 
 - the host's root filesystem mounted read-only at `/host`
 - access to `/dev/zfs`
 - the capabilities `CAP_SYS_CHROOT`, `CAP_SETUID` and `CAP_SETGID`, which container runtimes grant by default; all others can be dropped
 
-It needs neither a privileged container nor the host's PID namespace. Inside the chroot, each command runs as `nobody` (`--host-root.uid` and `--host-root.gid`), and `zpool` and `zfs` are found on `--host-root.path`, which covers `/usr/local`, merged and unmerged `/usr` layouts and NixOS.
+It doesn't need the host's PID namespace, and needs a privileged container only where there is no other way to grant `/dev/zfs` (see Kubernetes, below).
+
+### Image
+
+Each release publishes `ghcr.io/pdf/zfs_exporter` for `linux/amd64` and `linux/arm64`, tagged `vX.Y.Z`, `vX.Y`, `vX` and `latest`. Its build provenance is attested by GitHub, and can be checked with:
 
 ```console
-docker run -d --name zfs_exporter --read-only --cap-drop ALL --cap-add SYS_CHROOT --cap-add SETUID --cap-add SETGID --security-opt no-new-privileges -v /:/host:ro --device /dev/zfs -p 9134:9134 ghcr.io/pdf/zfs_exporter
+gh attestation verify oci://ghcr.io/pdf/zfs_exporter:v2 --owner pdf
 ```
 
-On Kubernetes, `/dev/zfs` can't be passed as a hostPath alone, since the container's device cgroup refuses it: expose it with a device plugin (e.g. [generic-device-plugin](https://github.com/squat/generic-device-plugin)) or CDI.
+### Docker
+
+```console
+docker run -d --name zfs_exporter --restart unless-stopped --read-only --cap-drop ALL --cap-add SYS_CHROOT --cap-add SETUID --cap-add SETGID --security-opt no-new-privileges -v /:/host:ro --device /dev/zfs -p 9134:9134 ghcr.io/pdf/zfs_exporter:v2
+```
+
+Or with Compose:
+
+```yaml
+services:
+  zfs_exporter:
+    image: ghcr.io/pdf/zfs_exporter:v2
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [SYS_CHROOT, SETUID, SETGID]
+    security_opt: [no-new-privileges]
+    devices: [/dev/zfs]
+    volumes:
+      - /:/host:ro
+    ports:
+      - 9134:9134
+```
+
+Extra flags go after the image name (or in `command:`), e.g. `--pool=tank`.
+
+### Kubernetes
+
+Kubernetes has no equivalent of `--device`: a hostPath of `/dev/zfs` alone is refused by the container's device cgroup. There are two ways to run it, both shown in [examples/kubernetes/daemonset.yaml](examples/kubernetes/daemonset.yaml):
+
+- **Privileged (recommended):** works on any cluster with nothing else installed, and is how comparable node agents run, such as OpenEBS ZFS LocalPV and prometheus-smartctl-exporter. The `zpool` and `zfs` commands still run as `nobody`.
+- **With a device plugin:** where the namespace's Pod Security level must stay below `privileged`, expose `/dev/zfs` with a device plugin such as [generic-device-plugin](https://github.com/squat/generic-device-plugin), request its resource (e.g. `squat.ai/zfs: 1`), and drop all capabilities but the three above.
 
 ### Building the image
 
-Following the Prometheus convention, the `Dockerfile` doesn't compile the exporter: it copies the binary that [promu](https://github.com/prometheus/promu) built into `.build/<os>-<arch>/`, so the image and the release tarballs carry the same build. On a linux/amd64 machine:
+Following the Prometheus convention, the `Dockerfile` doesn't compile the exporter: it copies the binary that [promu](https://github.com/prometheus/promu) built into `.build/<os>-<arch>/`, so the image and the release tarballs carry the same build. With only a copy, building for other architectures needs no emulation. To build both platforms as the release does (`promu crossbuild` builds inside Prometheus's golang-builder container, so needs Docker):
+
+```console
+make promu
+$(go env GOPATH)/bin/promu crossbuild -p linux/amd64 -p linux/arm64
+docker buildx create --name multiarch --driver docker-container --use
+docker buildx build --platform linux/amd64,linux/arm64 -t zfs_exporter .
+```
+
+Docker's default builder can only build several platforms at once with the containerd image store enabled, hence the separate builder.
+
+For a quick local image on linux/amd64, without the builder container:
 
 ```console
 make promu
 $(go env GOPATH)/bin/promu build --prefix .build/linux-amd64
-make docker DOCKER_ARCHS=amd64 DOCKER_REPO=local
+make docker DOCKER_ARCHS=amd64
 ```
 
-This tags `local/zfs-exporter-linux-amd64:<branch>`. For other architectures, `promu crossbuild -p linux/<arch>` builds `.build/linux-<arch>/` inside Prometheus's golang-builder container (Docker required), and `DOCKER_ARCHS` takes the same names, e.g. `amd64 arm64`.
+This tags `ghcr.io/pdf/zfs_exporter-linux-amd64:<branch>`.
 
 ## TLS endpoint
 

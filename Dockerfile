@@ -6,12 +6,17 @@
 # As in Prometheus's own exporters, this doesn't compile anything: it copies
 # the binary promu already built into .build/<os>-<arch>/, so the image
 # carries the same build as the release tarballs. Build that first (README,
-# Building the image), then run `make docker`.
-ARG ARCH="amd64"
-ARG OS="linux"
+# Building the image). With nothing but COPY, a multi-platform buildx build
+# needs no emulation: ARCH follows buildx's TARGETARCH, and `make docker`
+# sets it directly.
 FROM scratch
-ARG ARCH="amd64"
+ARG TARGETARCH
+ARG ARCH="${TARGETARCH}"
 ARG OS="linux"
+LABEL org.opencontainers.image.title="zfs_exporter"
+LABEL org.opencontainers.image.description="Prometheus exporter for ZFS pools, filesystems, snapshots and volumes"
+LABEL org.opencontainers.image.source="https://github.com/pdf/zfs_exporter"
+LABEL org.opencontainers.image.licenses="MIT"
 COPY .build/${OS}-${ARCH}/zfs_exporter /bin/zfs_exporter
 COPY LICENSE /LICENSE
 
