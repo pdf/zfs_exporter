@@ -60,6 +60,12 @@ Flags:
                                  complete (default: 8s)
       --pool=POOL ...            Name of the pool(s) to collect, repeat for multiple pools (default: all pools).
       --exclude=EXCLUDE ...      Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.
+      --host-root=HOST-ROOT      For containers: run zpool and zfs chrooted into this directory, where the host's root filesystem is mounted (the image sets /host). Unset (the default), they run from the exporter's own PATH as its own user. Linux
+                                 only; needs CAP_SYS_CHROOT, CAP_SETUID and CAP_SETGID.
+      --host-root.path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/run/current-system/sw/bin"  
+                                 With --host-root: colon-separated directories inside the host root searched for zpool and zfs.
+      --host-root.uid=65534      With --host-root: user ID that zpool and zfs run as.
+      --host-root.gid=65534      With --host-root: group ID that zpool and zfs run as.
       --[no-]web.systemd-socket  Use systemd socket activation listeners instead of port listeners (Linux only).
       --web.listen-address=:9134 ...  
                                  Addresses on which to expose metrics and web interface. Repeatable for multiple addresses. Examples: `:9100` or `[::1]:9100` for http, `vsock://:9100` for vsock
@@ -74,6 +80,34 @@ Collectors that are enabled by default can be negated by prefixing the flag with
 ```
 zfs_exporter --no-collector.dataset-filesystem
 ```
+
+## Container
+
+The image runs on Linux only, and contains nothing but the exporter: with `--host-root=/host` (the image's default) it runs the host's own `zpool` and `zfs`, chrooted into the host's root filesystem, so the CLI always matches the host's kernel module whatever its ZFS version or distribution. It needs:
+
+- the host's root filesystem mounted read-only at `/host`
+- access to `/dev/zfs`
+- the capabilities `CAP_SYS_CHROOT`, `CAP_SETUID` and `CAP_SETGID`, which container runtimes grant by default; all others can be dropped
+
+It needs neither a privileged container nor the host's PID namespace. Inside the chroot, each command runs as `nobody` (`--host-root.uid` and `--host-root.gid`), and `zpool` and `zfs` are found on `--host-root.path`, which covers `/usr/local`, merged and unmerged `/usr` layouts and NixOS.
+
+```console
+docker run -d --name zfs_exporter --read-only --cap-drop ALL --cap-add SYS_CHROOT --cap-add SETUID --cap-add SETGID --security-opt no-new-privileges -v /:/host:ro --device /dev/zfs -p 9134:9134 ghcr.io/pdf/zfs_exporter
+```
+
+On Kubernetes, `/dev/zfs` can't be passed as a hostPath alone, since the container's device cgroup refuses it: expose it with a device plugin (e.g. [generic-device-plugin](https://github.com/squat/generic-device-plugin)) or CDI.
+
+### Building the image
+
+Following the Prometheus convention, the `Dockerfile` doesn't compile the exporter: it copies the binary that [promu](https://github.com/prometheus/promu) built into `.build/<os>-<arch>/`, so the image and the release tarballs carry the same build. On a linux/amd64 machine:
+
+```console
+make promu
+$(go env GOPATH)/bin/promu build --prefix .build/linux-amd64
+make docker DOCKER_ARCHS=amd64 DOCKER_REPO=local
+```
+
+This tags `local/zfs-exporter-linux-amd64:<branch>`. For other architectures, `promu crossbuild -p linux/<arch>` builds `.build/linux-<arch>/` inside Prometheus's golang-builder container (Docker required), and `DOCKER_ARCHS` takes the same names, e.g. `amd64 arm64`.
 
 ## TLS endpoint
 

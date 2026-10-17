@@ -49,22 +49,36 @@ type handler interface {
 	processLine(pool string, line []string) error
 }
 
-type clientImpl struct{}
+// runner builds the command for a ZFS CLI invocation
+type runner interface {
+	command(name string, args ...string) *exec.Cmd
+}
+
+// directRunner runs the ZFS CLI found on the exporter's own PATH
+type directRunner struct{}
+
+func (directRunner) command(name string, args ...string) *exec.Cmd {
+	return exec.Command(name, args...)
+}
+
+type clientImpl struct {
+	run runner
+}
 
 func (z clientImpl) PoolNames() ([]string, error) {
-	return poolNames()
+	return poolNames(z.run)
 }
 
 func (z clientImpl) Pool(name string) Pool {
-	return newPoolImpl(name)
+	return newPoolImpl(z.run, name)
 }
 
 func (z clientImpl) Datasets(pool string, kind DatasetKind) Datasets {
-	return newDatasetsImpl(pool, kind)
+	return newDatasetsImpl(z.run, pool, kind)
 }
 
-func execute(pool string, h handler, cmd string, args ...string) error {
-	c := exec.Command(cmd, append(args, pool)...)
+func execute(run runner, pool string, h handler, cmd string, args ...string) error {
+	c := run.command(cmd, append(args, pool)...)
 	out, err := c.StdoutPipe()
 	if err != nil {
 		return err
@@ -107,5 +121,5 @@ func execute(pool string, h handler, cmd string, args ...string) error {
 
 // New instantiates a ZFS Client
 func New() Client {
-	return clientImpl{}
+	return clientImpl{run: directRunner{}}
 }
