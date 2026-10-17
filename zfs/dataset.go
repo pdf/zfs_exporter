@@ -26,6 +26,7 @@ const (
 )
 
 type datasetsImpl struct {
+	run  runner
 	pool string
 	kind DatasetKind
 }
@@ -40,7 +41,7 @@ func (d datasetsImpl) Kind() DatasetKind {
 
 func (d datasetsImpl) Properties(props ...string) ([]DatasetProperties, error) {
 	handler := newDatasetHandler()
-	if err := execute(d.pool, handler, `zfs`, `get`, `-Hprt`, string(d.kind), `-o`, `name,property,value`, strings.Join(props, `,`)); err != nil {
+	if err := execute(d.run, d.pool, handler, `zfs`, `get`, `-Hprt`, string(d.kind), `-o`, `name,property,value`, strings.Join(props, `,`)); err != nil {
 		return nil, err
 	}
 	return handler.datasets(), nil
@@ -93,8 +94,9 @@ func newDatasetPropertiesImpl(name string) *datasetPropertiesImpl {
 	}
 }
 
-func newDatasetsImpl(pool string, kind DatasetKind) datasetsImpl {
+func newDatasetsImpl(run runner, pool string, kind DatasetKind) datasetsImpl {
 	return datasetsImpl{
+		run:  run,
 		pool: pool,
 		kind: kind,
 	}

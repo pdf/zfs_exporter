@@ -27,6 +27,10 @@ func main() {
 		deadline                = kingpin.Flag("deadline", "Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your scrape timeout duration. The current collection run will continue and update the cache when complete (default: 8s)").Default("8s").Duration()
 		pools                   = kingpin.Flag("pool", "Name of the pool(s) to collect, repeat for multiple pools (default: all pools).").Strings()
 		excludes                = kingpin.Flag("exclude", "Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.").Strings()
+		hostRoot                = kingpin.Flag(`host-root`, `For containers: run zpool and zfs chrooted into this directory, where the host's root filesystem is mounted (the image sets /host). Unset (the default), they run from the exporter's own PATH as its own user. Linux only; needs CAP_SYS_CHROOT, CAP_SETUID and CAP_SETGID.`).String()
+		hostRootPath            = kingpin.Flag(`host-root.path`, `With --host-root: colon-separated directories inside the host root searched for zpool and zfs.`).Default(strings.Join(zfs.DefaultHostPath, `:`)).String()
+		hostRootUID             = kingpin.Flag(`host-root.uid`, `With --host-root: user ID that zpool and zfs run as.`).Default(`65534`).Uint32()
+		hostRootGID             = kingpin.Flag(`host-root.gid`, `With --host-root: group ID that zpool and zfs run as.`).Default(`65534`).Uint32()
 		toolkitFlags            = kingpinflag.AddFlags(kingpin.CommandLine, ":9134")
 	)
 
@@ -40,13 +44,30 @@ func main() {
 	logger.Info("Starting zfs_exporter", "version", version.Info())
 	logger.Info("Build context", "context", version.BuildContext())
 
+	client := zfs.New()
+	if *hostRoot != `` {
+		var info zfs.HostRootInfo
+		var err error
+		client, info, err = zfs.NewHostRoot(zfs.HostRootConfig{
+			Root: *hostRoot,
+			Path: strings.Split(*hostRootPath, `:`),
+			UID:  *hostRootUID,
+			GID:  *hostRootGID,
+		})
+		if err != nil {
+			logger.Error("Error using the host root", "err", err)
+			os.Exit(1)
+		}
+		logger.Info("Using the host's ZFS", "root", *hostRoot, "zpool", info.Zpool, "zfs", info.ZFS, "version", info.Version)
+	}
+
 	c, err := collector.NewZFS(collector.ZFSConfig{
 		DisableMetrics: *metricsExporterDisabled,
 		Deadline:       *deadline,
 		Pools:          *pools,
 		Excludes:       *excludes,
 		Logger:         logger,
-		ZFSClient:      zfs.New(),
+		ZFSClient:      client,
 	})
 	if err != nil {
 		logger.Error("Error creating an exporter", "err", err)

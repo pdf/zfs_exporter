@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os/exec"
 	"strings"
 )
 
@@ -29,6 +28,7 @@ const (
 )
 
 type poolImpl struct {
+	run  runner
 	name string
 }
 
@@ -38,7 +38,7 @@ func (p poolImpl) Name() string {
 
 func (p poolImpl) Properties(props ...string) (PoolProperties, error) {
 	handler := newPoolPropertiesImpl()
-	if err := execute(p.name, handler, `zpool`, `get`, `-Hpo`, `name,property,value`, strings.Join(props, `,`)); err != nil {
+	if err := execute(p.run, p.name, handler, `zpool`, `get`, `-Hpo`, `name,property,value`, strings.Join(props, `,`)); err != nil {
 		return handler, err
 	}
 	return handler, nil
@@ -63,9 +63,9 @@ func (p *poolPropertiesImpl) processLine(pool string, line []string) error {
 }
 
 // PoolNames returns a list of available pool names
-func poolNames() ([]string, error) {
+func poolNames(run runner) ([]string, error) {
 	pools := make([]string, 0)
-	cmd := exec.Command(`zpool`, `list`, `-Ho`, `name`)
+	cmd := run.command(`zpool`, `list`, `-Ho`, `name`)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -92,8 +92,9 @@ func poolNames() ([]string, error) {
 	return pools, nil
 }
 
-func newPoolImpl(name string) poolImpl {
+func newPoolImpl(run runner, name string) poolImpl {
 	return poolImpl{
+		run:  run,
 		name: name,
 	}
 }
