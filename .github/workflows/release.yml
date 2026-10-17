@@ -25,13 +25,13 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
         id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           # Fetch all versions for tag/changelog generation
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v7
         with:
           go-version: 1.26.8
 
@@ -42,7 +42,7 @@ jobs:
 
       - name: Calculate Version
         id: calculate_version
-        uses: mathieudutour/github-tag-action@v4.5
+        uses: mathieudutour/github-tag-action@v7
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           dry_run: true
@@ -66,7 +66,7 @@ jobs:
 
       - name: Commit Changes
         id: commit_changes
-        uses: EndBug/add-and-commit@v9.1.1
+        uses: EndBug/add-and-commit@v11
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -76,7 +76,7 @@ jobs:
 
       - name: Commit Tag
         id: commit_tag
-        uses: mathieudutour/github-tag-action@v6.1
+        uses: mathieudutour/github-tag-action@v7
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           commit_sha: ${{ steps.commit_changes.outputs.commit_long_sha }}
@@ -84,28 +84,19 @@ jobs:
       - name: Build
         id: build
         run: |
-          promu crossbuild --parallelism $PARALLELISM
-          promu crossbuild --parallelism $PARALLELISM tarballs
+          promu crossbuild --parallelism "$PARALLELISM"
+          promu crossbuild --parallelism "$PARALLELISM" tarballs
           promu checksum .tarballs
 
+      # actions/create-release is archived; its README lists this as a replacement.
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.calculate_version.outputs.new_tag }}
-          release_name: Release ${{ steps.calculate_version.outputs.new_tag }}
+          name: Release ${{ steps.calculate_version.outputs.new_tag }}
           body: |
             Changes in this release:
             ${{ steps.calculate_version.outputs.changelog }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Assets
-        id: upload_release_assets
-        uses: AButler/upload-release-assets@v2.0
-        with:
-          files: ".tarballs/*"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          release-tag: ${{ steps.calculate_version.outputs.new_tag }}
+          files: .tarballs/*
+          fail_on_unmatched_files: true

@@ -22,3 +22,11 @@ all:: test build
 test:: vet precheck style lint unused common-test
 
 include Makefile.common
+
+.PHONY: govulncheck
+govulncheck: install-govulncheck
+	govulncheck ./...
+
+.PHONY: install-govulncheck
+install-govulncheck:
+	command -v govulncheck > /dev/null || go install golang.org/x/vuln/cmd/govulncheck@latest
