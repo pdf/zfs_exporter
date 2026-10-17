@@ -1,0 +1,77 @@
+# zfs_exporter on every ZFS node, scraped through the headless Service.
+#
+# This runs privileged, which is the only way to reach /dev/zfs without a
+# device plugin, and is how comparable node agents run (OpenEBS ZFS LocalPV,
+# prometheus-smartctl-exporter). The zpool and zfs commands still run as
+# nobody inside the host root.
+#
+# To run unprivileged instead, expose /dev/zfs with a device plugin, e.g.
+# generic-device-plugin with
+#   --device='{"name": "zfs", "groups": [{"paths": [{"path": "/dev/zfs"}]}]}'
+# then swap the securityContext and add the resource request as marked below.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: zfs-exporter
+  labels:
+    app.kubernetes.io/name: zfs-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zfs-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zfs-exporter
+    spec:
+      # Limit to the ZFS nodes, e.g. with a label you set on them.
+      # nodeSelector:
+      #   zfs: "true"
+      automountServiceAccountToken: false
+      containers:
+        - name: zfs-exporter
+          image: ghcr.io/pdf/zfs_exporter:v2
+          ports:
+            - name: metrics
+              containerPort: 9134
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+            # Device plugin instead of privileged:
+            # privileged: false
+            # allowPrivilegeEscalation: false
+            # capabilities:
+            #   drop: [ALL]
+            #   add: [SYS_CHROOT, SETUID, SETGID]
+          # Device plugin only:
+          # resources:
+          #   limits:
+          #     squat.ai/zfs: 1
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
+          volumeMounts:
+            - name: host-root
+              mountPath: /host
+              readOnly: true
+      volumes:
+        - name: host-root
+          hostPath:
+            path: /
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zfs-exporter
+  labels:
+    app.kubernetes.io/name: zfs-exporter
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: zfs-exporter
+  ports:
+    - name: metrics
+      port: 9134
+      targetPort: metrics

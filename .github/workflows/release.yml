@@ -16,6 +16,14 @@ jobs:
   release:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    permissions:
+      # Commit the version and changelog, tag, and create the release
+      contents: write
+      # Push the image to ghcr.io
+      packages: write
+      # Sign the image's build provenance attestation
+      id-token: write
+      attestations: write
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -100,3 +108,46 @@ jobs:
             ${{ steps.calculate_version.outputs.changelog }}
           files: .tarballs/*
           fail_on_unmatched_files: true
+
+      # The image copies the linux binaries the crossbuild above produced, so
+      # it carries the same build as the tarballs.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: image_meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: latest=false
+          tags: |
+            type=semver,pattern=v{{version}},value=${{ steps.calculate_version.outputs.new_tag }}
+            type=semver,pattern=v{{major}}.{{minor}},value=${{ steps.calculate_version.outputs.new_tag }}
+            type=semver,pattern=v{{major}},value=${{ steps.calculate_version.outputs.new_tag }}
+            type=raw,value=latest
+
+      - name: Build and push image
+        id: image_push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.image_meta.outputs.tags }}
+          labels: ${{ steps.image_meta.outputs.labels }}
+          annotations: ${{ steps.image_meta.outputs.annotations }}
+          sbom: true
+
+      - name: Attest image provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.image_push.outputs.digest }}
+          push-to-registry: true
