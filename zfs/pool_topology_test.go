@@ -77,3 +77,40 @@ func TestParsePoolTopologySpecialVdev(t *testing.T) {
 		t.Fatalf("bad nested topology: %+v", got)
 	}
 }
+
+// Regression fixture from a real host: the pool row has four fields, while
+// the direct disk vdev includes ten fields even with -o name,size,allocated,free.
+func TestParsePoolTopologyRealSingleDiskTenColumns(t *testing.T) {
+	root := t.TempDir()
+	p := filepath.Join(root, "sys", "class", "block", "sdb1")
+	if err := os.MkdirAll(p, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Raw block-device capacity: 5497556041728 bytes / 512.
+	if err := os.WriteFile(filepath.Join(p, "size"), []byte("10737414144\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	const fixture = "zpool-hdd\t5480378269696\t25087770624\t5455290499072\n" +
+		"\t/dev/sdb1\t5497556041728\t25087770624\t5455290499072\t-\t-\t1\t0\t-\tONLINE\n"
+	got, err := parsePoolTopology(strings.NewReader(fixture), "zpool-hdd", root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Vdevs) != 1 || len(got.Disks) != 1 {
+		t.Fatalf("want 1 VDEV and 1 disk, got: %+v", got)
+	}
+	if v := got.Vdevs[0]; v.Name != "/dev/sdb1" || v.SizeBytes != 5497556041728 || v.AllocatedBytes != 25087770624 || v.FreeBytes != 5455290499072 {
+		t.Fatalf("unexpected direct-disk VDEV: %+v", v)
+	}
+	if d := got.Disks[0]; d.Vdev != "/dev/sdb1" || d.Device != "/dev/sdb1" || d.SizeBytes != 5497556041728 {
+		t.Fatalf("unexpected disk: %+v", d)
+	}
+}
+
+func TestParsePoolTopologyTooFewColumns(t *testing.T) {
+	_, err := parsePoolTopology(strings.NewReader("zpool-hdd\t100\t50\n"), "zpool-hdd", t.TempDir())
+	if err == nil {
+		t.Fatal("expected error when FREE column is missing")
+	}
+}

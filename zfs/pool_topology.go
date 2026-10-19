@@ -78,8 +78,12 @@ func parsePoolTopology(r io.Reader, pool, hostRoot string) (PoolTopology, error)
 			indent = len(prefix) / 2
 		}
 		columns := strings.Split(trimmed, "\t")
-		if len(columns) != 4 {
-			return PoolTopology{}, fmt.Errorf("invalid zpool list output at line %d: got %d columns", lineNumber, len(columns))
+		// The top-level pool row respects -o, but some OpenZFS versions
+		// print additional columns for leaf devices with zpool list -v.
+		// The first four fields are always NAME, SIZE, ALLOC and FREE
+		// for this command. Ignore trailing optional fields.
+		if len(columns) < 4 {
+			return PoolTopology{}, fmt.Errorf("invalid zpool list output at line %d: need at least 4 columns, got %d", lineNumber, len(columns))
 		}
 		name := strings.TrimSpace(columns[0])
 		if name == "" {
