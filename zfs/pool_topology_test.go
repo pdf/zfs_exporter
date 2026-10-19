@@ -11,10 +11,10 @@ func TestParsePoolTopology(t *testing.T) {
 	root := t.TempDir()
 	for dev, sectors := range map[string]string{"sdb": "1953125000\n", "sdc": "1953125000\n", "nvme0n1p1": "3906250000\n"} {
 		p := filepath.Join(root, "sys", "class", "block", dev)
-		if err := os.MkdirAll(p, 0755); err != nil {
+		if err := os.MkdirAll(p, 0o755); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(filepath.Join(p, "size"), []byte(sectors), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(p, "size"), []byte(sectors), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -59,10 +59,10 @@ func TestParsePoolTopologyInvalid(t *testing.T) {
 func TestParsePoolTopologySpecialVdev(t *testing.T) {
 	root := t.TempDir()
 	p := filepath.Join(root, "sys", "class", "block", "sdd")
-	if err := os.MkdirAll(p, 0755); err != nil {
+	if err := os.MkdirAll(p, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(p, "size"), []byte("1000\n"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(p, "size"), []byte("1000\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	fixture := "tank\t512000\t120000\t392000\n" +
