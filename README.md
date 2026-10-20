@@ -87,7 +87,7 @@ The image runs on Linux only, and contains nothing but the exporter: with `--hos
 
 The container needs:
 
-- the host's root filesystem mounted read-only at `/host`
+- the host's root filesystem mounted read-only at `/host`, as a slave of the host's mounts (`rslave` in Docker, `mountPropagation: HostToContainer` in Kubernetes). With the default private mount, the container keeps a copy of every dataset mounted when it started, so a dataset the host later unmounts stays mounted in the container, and the host can't destroy it (`dataset is busy`) until the container restarts.
 - access to `/dev/zfs`
 - the capabilities `CAP_SYS_CHROOT`, `CAP_SETUID` and `CAP_SETGID`, which container runtimes grant by default; all others can be dropped
 
@@ -104,7 +104,7 @@ gh attestation verify oci://ghcr.io/pdf/zfs_exporter:v2 --owner pdf
 ### Docker
 
 ```console
-docker run -d --name zfs_exporter --restart unless-stopped --read-only --cap-drop ALL --cap-add SYS_CHROOT --cap-add SETUID --cap-add SETGID --security-opt no-new-privileges -v /:/host:ro --device /dev/zfs -p 9134:9134 ghcr.io/pdf/zfs_exporter:v2
+docker run -d --name zfs_exporter --restart unless-stopped --read-only --cap-drop ALL --cap-add SYS_CHROOT --cap-add SETUID --cap-add SETGID --security-opt no-new-privileges -v /:/host:ro,rslave --device /dev/zfs -p 9134:9134 ghcr.io/pdf/zfs_exporter:v2
 ```
 
 Or with Compose:
@@ -120,7 +120,7 @@ services:
     security_opt: [no-new-privileges]
     devices: [/dev/zfs]
     volumes:
-      - /:/host:ro
+      - /:/host:ro,rslave
     ports:
       - 9134:9134
 ```

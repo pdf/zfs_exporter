@@ -52,9 +52,13 @@ spec:
               path: /
               port: metrics
           volumeMounts:
+            # HostToContainer: a slave of the host's mounts, so datasets the
+            # host unmounts leave the container too. The default private
+            # mount keeps them, and the host then can't destroy them (busy).
             - name: host-root
               mountPath: /host
               readOnly: true
+              mountPropagation: HostToContainer
       volumes:
         - name: host-root
           hostPath:
