@@ -1,3 +1,11 @@
+### [2.5.1](https://github.com/pdf/zfs_exporter/compare/v2.5.0...v2.5.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* **container:** Mount the host root as a slave of the host ([c7f8bb4](https://github.com/pdf/zfs_exporter/commit/c7f8bb471a6236b0579d40ecad0149eea34e42e3))
+
+
 ## [2.5.0](https://github.com/pdf/zfs_exporter/compare/v2.4.3...v2.5.0) (2026-10-17)
 
 
