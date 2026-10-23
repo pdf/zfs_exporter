@@ -10,6 +10,7 @@
 package mock_zfs
 
 import (
+	exec "os/exec"
 	reflect "reflect"
 
 	zfs "github.com/pdf/zfs_exporter/v2/zfs"
@@ -81,6 +82,21 @@ func (m *MockClient) PoolNames() ([]string, error) {
 func (mr *MockClientMockRecorder) PoolNames() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolNames", reflect.TypeOf((*MockClient)(nil).PoolNames))
+}
+
+// PoolTopology mocks base method.
+func (m *MockClient) PoolTopology(pool string) (zfs.PoolTopology, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PoolTopology", pool)
+	ret0, _ := ret[0].(zfs.PoolTopology)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PoolTopology indicates an expected call of PoolTopology.
+func (mr *MockClientMockRecorder) PoolTopology(pool any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolTopology", reflect.TypeOf((*MockClient)(nil).PoolTopology), pool)
 }
 
 // MockPool is a mock of Pool interface.
@@ -337,4 +353,47 @@ func (m *Mockhandler) processLine(pool string, line []string) error {
 func (mr *MockhandlerMockRecorder) processLine(pool, line any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "processLine", reflect.TypeOf((*Mockhandler)(nil).processLine), pool, line)
+}
+
+// Mockrunner is a mock of runner interface.
+type Mockrunner struct {
+	ctrl     *gomock.Controller
+	recorder *MockrunnerMockRecorder
+	isgomock struct{}
+}
+
+// MockrunnerMockRecorder is the mock recorder for Mockrunner.
+type MockrunnerMockRecorder struct {
+	mock *Mockrunner
+}
+
+// NewMockrunner creates a new mock instance.
+func NewMockrunner(ctrl *gomock.Controller) *Mockrunner {
+	mock := &Mockrunner{ctrl: ctrl}
+	mock.recorder = &MockrunnerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *Mockrunner) EXPECT() *MockrunnerMockRecorder {
+	return m.recorder
+}
+
+// command mocks base method.
+func (m *Mockrunner) command(name string, args ...string) *exec.Cmd {
+	m.ctrl.T.Helper()
+	varargs := []any{name}
+	for _, a := range args {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "command", varargs...)
+	ret0, _ := ret[0].(*exec.Cmd)
+	return ret0
+}
+
+// command indicates an expected call of command.
+func (mr *MockrunnerMockRecorder) command(name any, args ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{name}, args...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "command", reflect.TypeOf((*Mockrunner)(nil).command), varargs...)
 }

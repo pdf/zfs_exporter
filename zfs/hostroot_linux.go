@@ -34,7 +34,7 @@ func NewHostRoot(cfg HostRootConfig) (Client, HostRootInfo, error) {
 			info.ZFS = path
 		}
 	}
-	c := clientImpl{run: r}
+	c := clientImpl{run: r, sysfsRoot: cfg.Root}
 	if _, err := c.PoolNames(); err != nil {
 		return nil, info, fmt.Errorf("listing pools in host root %s failed, is /dev/zfs available to the container? %w", cfg.Root, err)
 	}
