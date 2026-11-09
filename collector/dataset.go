@@ -221,13 +221,13 @@ func (c *datasetCollector) describe(ch chan<- *prometheus.Desc) {
 	}
 }
 
-func (c *datasetCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
+func (c *datasetCollector) update(ch chan<- metric, pools []string, f filters) error {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(pools))
 	for _, pool := range pools {
 		wg.Add(1)
 		go func(pool string) {
-			if err := c.updatePoolMetrics(ch, pool, excludes); err != nil {
+			if err := c.updatePoolMetrics(ch, pool, f); err != nil {
 				errChan <- err
 			}
 			wg.Done()
@@ -243,15 +243,15 @@ func (c *datasetCollector) update(ch chan<- metric, pools []string, excludes reg
 	}
 }
 
-func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool string, excludes regexpCollection) error {
-	datasets := c.client.Datasets(pool, c.kind)
+func (c *datasetCollector) updatePoolMetrics(ch chan<- metric, pool string, f filters) error {
+	datasets := c.client.Datasets(pool, c.kind, f.excludeDescendants...)
 	props, err := datasets.Properties(c.props...)
 	if err != nil {
 		return err
 	}
 
 	for _, dataset := range props {
-		if excludes.MatchString(dataset.DatasetName()) {
+		if f.excludes.MatchString(dataset.DatasetName()) {
 			continue
 		}
 		if err = c.updateDatasetMetrics(ch, pool, dataset); err != nil {

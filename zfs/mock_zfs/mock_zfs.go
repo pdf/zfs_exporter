@@ -41,17 +41,22 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // Datasets mocks base method.
-func (m *MockClient) Datasets(pool string, kind zfs.DatasetKind) zfs.Datasets {
+func (m *MockClient) Datasets(pool string, kind zfs.DatasetKind, excludeDescendants ...string) zfs.Datasets {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Datasets", pool, kind)
+	varargs := []any{pool, kind}
+	for _, a := range excludeDescendants {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Datasets", varargs...)
 	ret0, _ := ret[0].(zfs.Datasets)
 	return ret0
 }
 
 // Datasets indicates an expected call of Datasets.
-func (mr *MockClientMockRecorder) Datasets(pool, kind any) *gomock.Call {
+func (mr *MockClientMockRecorder) Datasets(pool, kind any, excludeDescendants ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Datasets", reflect.TypeOf((*MockClient)(nil).Datasets), pool, kind)
+	varargs := append([]any{pool, kind}, excludeDescendants...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Datasets", reflect.TypeOf((*MockClient)(nil).Datasets), varargs...)
 }
 
 // Pool mocks base method.

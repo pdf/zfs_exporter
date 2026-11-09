@@ -2,8 +2,11 @@ package collector
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -25,14 +28,25 @@ func (c regexpCollection) MatchString(input string) bool {
 	return false
 }
 
+// filters select which datasets the collectors report.
+type filters struct {
+	// excludes drops matching datasets after they are collected.
+	excludes regexpCollection
+	// excludeDescendants are datasets whose descendants are never collected.
+	excludeDescendants []string
+}
+
 // ZFSConfig configures a ZFS collector
 type ZFSConfig struct {
 	DisableMetrics bool
 	Deadline       time.Duration
 	Pools          []string
 	Excludes       []string
-	Logger         *slog.Logger
-	ZFSClient      zfs.Client
+	// ExcludeDescendants are datasets whose child filesystems and volumes,
+	// and their snapshots, are neither queried nor reported.
+	ExcludeDescendants []string
+	Logger             *slog.Logger
+	ZFSClient          zfs.Client
 }
 
 // ZFS collector
@@ -45,7 +59,8 @@ type ZFS struct {
 	cache          *metricCache
 	ready          chan struct{}
 	logger         *slog.Logger
-	excludes       regexpCollection
+	filters        filters
+	warnUnused     sync.Once
 }
 
 // Describe implements the prometheus.Collector interface.
@@ -120,6 +135,9 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 	}()
 
 	pools, poolErr := c.getPools(c.Pools)
+	if poolErr == nil {
+		c.warnUnused.Do(func() { c.warnUncollectedDescendants(pools) })
+	}
 
 	for name, state := range c.Collectors {
 		if !*state.Enabled {
@@ -204,10 +222,21 @@ func (c *ZFS) getPools(pools []string) ([]string, error) {
 
 func (c *ZFS) execute(ctx context.Context, name string, collector Collector, ch chan<- metric, pools []string) {
 	begin := time.Now()
-	err := collector.update(ch, pools, c.excludes)
+	err := collector.update(ch, pools, c.filters)
 	duration := time.Since(begin)
 
 	c.publishCollectorMetrics(ctx, name, err, duration, ch)
+}
+
+// warnUncollectedDescendants logs each excluded-descendants path whose pool is
+// not collected, since it can have no effect.
+func (c *ZFS) warnUncollectedDescendants(pools []string) {
+	for _, p := range c.filters.excludeDescendants {
+		pool, _, _ := strings.Cut(p, `/`)
+		if !slices.Contains(pools, pool) {
+			c.logger.Warn("Ignoring excluded descendants outside the collected pools", "dataset", p)
+		}
+	}
 }
 
 func (c *ZFS) publishCollectorMetrics(ctx context.Context, name string, err error, duration time.Duration, ch chan<- metric) {
@@ -253,6 +282,10 @@ func NewZFS(config ZFSConfig) (*ZFS, error) {
 	for i, v := range config.Excludes {
 		excludes[i] = regexp.MustCompile(v)
 	}
+	descendants, err := normalizeDescendants(config.ExcludeDescendants)
+	if err != nil {
+		return nil, err
+	}
 	ready := make(chan struct{}, 1)
 	ready <- struct{}{}
 	return &ZFS{
@@ -261,9 +294,38 @@ func NewZFS(config ZFSConfig) (*ZFS, error) {
 		deadline:       config.Deadline,
 		Pools:          config.Pools,
 		Collectors:     collectorStates,
-		excludes:       excludes,
+		filters:        filters{excludes: excludes, excludeDescendants: descendants},
 		cache:          newMetricCache(),
 		ready:          ready,
 		logger:         config.Logger,
 	}, nil
+}
+
+// normalizeDescendants validates dataset paths, then sorts them and drops
+// duplicates, and any path below another path in the list.
+func normalizeDescendants(paths []string) ([]string, error) {
+	for _, p := range paths {
+		switch {
+		case p == ``:
+			return nil, errors.New(`invalid dataset to exclude descendants of: empty name`)
+		case strings.ContainsAny(p, `@#`):
+			return nil, fmt.Errorf("invalid dataset to exclude descendants of %q: snapshots and bookmarks have no descendants", p)
+		case strings.HasPrefix(p, `/`), strings.HasSuffix(p, `/`), strings.Contains(p, `//`):
+			return nil, fmt.Errorf("invalid dataset to exclude descendants of %q: expected a dataset name such as pool/dataset", p)
+		}
+	}
+
+	sorted := slices.Clone(paths)
+	slices.Sort(sorted)
+	// Sorting puts each path before the paths below it.
+	result := make([]string, 0, len(sorted))
+	for _, p := range sorted {
+		if slices.ContainsFunc(result, func(kept string) bool {
+			return p == kept || strings.HasPrefix(p, kept+`/`)
+		}) {
+			continue
+		}
+		result = append(result, p)
+	}
+	return result, nil
 }
