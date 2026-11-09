@@ -10,6 +10,7 @@ Prometheus exporter for ZFS (pools, filesystems, snapshots and volumes). Other i
 - **Pool selection** - allow the user to select which pools are collected
 - **Multiple collectors** - allow the user to select which data types are collected (pools, filesystems, snapshots and volumes)
 - **Property selection** - allow the user to select which properties are collected per data type (enabling only required properties will increase collector performance, by reducing metadata queries)
+- **Subtree exclusion** - allow the user to skip everything below a dataset (e.g. `--exclude-descendants=rpool/docker`), so that ZFS never visits it. `--exclude` matches datasets after they have been collected, and saves no ZFS work
 - **Collection deadline and caching** - if the collection duration exceeds the configured deadline, cached data from the last run will be returned for any metrics that have not yet been collected, and the current collection run will continue in the background. Collections will not run concurrently, so that when a system is running slowly, we don't compound the problem - if an existing collection is still running, cached data will be returned.
 
 ## Installation
@@ -59,7 +60,11 @@ Flags:
       --deadline=8s              Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your scrape timeout duration. The current collection run will continue and update the cache when
                                  complete (default: 8s)
       --pool=POOL ...            Name of the pool(s) to collect, repeat for multiple pools (default: all pools).
-      --exclude=EXCLUDE ...      Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.
+      --exclude=EXCLUDE ...      Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times. Matching happens after collection, so excluded datasets are still queried; see
+                                 --exclude-descendants to skip a subtree.
+      --exclude-descendants=DATASET ...  
+                                 Do not traverse below this dataset: its child filesystems and volumes, and their snapshots, are neither queried nor reported. The dataset itself and its own snapshots are still collected. May be specified multiple
+                                 times.
       --host-root=HOST-ROOT      For containers: run zpool and zfs chrooted into this directory, where the host's root filesystem is mounted (the image sets /host). Unset (the default), they run from the exporter's own PATH as its own user. Linux
                                  only; needs CAP_SYS_CHROOT, CAP_SETUID and CAP_SETGID.
       --host-root.path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/run/current-system/sw/bin"  
