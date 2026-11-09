@@ -61,7 +61,7 @@ type State struct {
 
 // Collector defines the minimum functionality for registering a collector
 type Collector interface {
-	update(ch chan<- metric, pools []string, excludes regexpCollection) error
+	update(ch chan<- metric, pools []string, f filters) error
 	describe(ch chan<- *prometheus.Desc)
 }
 

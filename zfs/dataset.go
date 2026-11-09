@@ -1,6 +1,7 @@
 package zfs
 
 import (
+	"errors"
 	"strings"
 )
 
@@ -26,9 +27,10 @@ const (
 )
 
 type datasetsImpl struct {
-	run  runner
-	pool string
-	kind DatasetKind
+	run                runner
+	pool               string
+	kind               DatasetKind
+	excludeDescendants []string
 }
 
 func (d datasetsImpl) Pool() string {
@@ -40,11 +42,55 @@ func (d datasetsImpl) Kind() DatasetKind {
 }
 
 func (d datasetsImpl) Properties(props ...string) ([]DatasetProperties, error) {
-	handler := newDatasetHandler()
-	if err := execute(d.run, d.pool, handler, `zfs`, `get`, `-Hprt`, string(d.kind), `-o`, `name,property,value`, strings.Join(props, `,`)); err != nil {
+	prune := descendantsIn(d.pool, d.excludeDescendants)
+	if len(prune) == 0 {
+		handler := newDatasetHandler()
+		if err := execute(d.run, d.pool, []string{d.pool}, handler, `zfs`, `get`, `-Hprt`, string(d.kind), `-o`, `name,property,value`, strings.Join(props, `,`)); err != nil {
+			return nil, err
+		}
+		return handler.datasets(), nil
+	}
+
+	// Datasets may be destroyed between planning and querying, so a missing
+	// dataset gets one fresh plan.
+	handler, err := d.prunedProperties(prune, props)
+	if errors.Is(err, errDatasetNotExist) {
+		handler, err = d.prunedProperties(prune, props)
+	}
+	if err != nil {
 		return nil, err
 	}
 	return handler.datasets(), nil
+}
+
+// prunedProperties queries the datasets of the pool without visiting anything
+// below a dataset in prune.
+func (d datasetsImpl) prunedProperties(prune []string, props []string) (*datasetHandler, error) {
+	recursive, shallow, err := planTargets(d.pool, prune, func(node string) ([]string, error) {
+		return listChildren(d.run, node)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	handler := newDatasetHandler()
+	propList := strings.Join(props, `,`)
+	if len(recursive) > 0 {
+		if err := execute(d.run, d.pool, recursive, handler, `zfs`, `get`, `-Hprt`, string(d.kind), `-o`, `name,property,value`, propList); err != nil {
+			return nil, err
+		}
+	}
+	if len(shallow) > 0 {
+		// A snapshot is one level below its dataset.
+		depth := `0`
+		if d.kind == DatasetSnapshot {
+			depth = `1`
+		}
+		if err := execute(d.run, d.pool, shallow, handler, `zfs`, `get`, `-Hpt`, string(d.kind), `-d`, depth, `-o`, `name,property,value`, propList); err != nil {
+			return nil, err
+		}
+	}
+	return handler, nil
 }
 
 type datasetPropertiesImpl struct {
@@ -94,11 +140,12 @@ func newDatasetPropertiesImpl(name string) *datasetPropertiesImpl {
 	}
 }
 
-func newDatasetsImpl(run runner, pool string, kind DatasetKind) datasetsImpl {
+func newDatasetsImpl(run runner, pool string, kind DatasetKind, excludeDescendants []string) datasetsImpl {
 	return datasetsImpl{
-		run:  run,
-		pool: pool,
-		kind: kind,
+		run:                run,
+		pool:               pool,
+		kind:               kind,
+		excludeDescendants: excludeDescendants,
 	}
 }
 

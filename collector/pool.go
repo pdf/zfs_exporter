@@ -140,7 +140,7 @@ func (c *poolCollector) describe(ch chan<- *prometheus.Desc) {
 	}
 }
 
-func (c *poolCollector) update(ch chan<- metric, pools []string, excludes regexpCollection) error {
+func (c *poolCollector) update(ch chan<- metric, pools []string, _ filters) error {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(pools))
 	for _, pool := range pools {

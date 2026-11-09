@@ -26,7 +26,8 @@ func main() {
 		metricsExporterDisabled = kingpin.Flag(`web.disable-exporter-metrics`, `Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).`).Default(`false`).Bool()
 		deadline                = kingpin.Flag("deadline", "Maximum duration that a collection should run before returning cached data. Should be set to a value shorter than your scrape timeout duration. The current collection run will continue and update the cache when complete (default: 8s)").Default("8s").Duration()
 		pools                   = kingpin.Flag("pool", "Name of the pool(s) to collect, repeat for multiple pools (default: all pools).").Strings()
-		excludes                = kingpin.Flag("exclude", "Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times.").Strings()
+		excludes                = kingpin.Flag("exclude", "Exclude datasets/snapshots/volumes that match the provided regex (e.g. '^rpool/docker/'), may be specified multiple times. Matching happens after collection, so excluded datasets are still queried; see --exclude-descendants to skip a subtree.").Strings()
+		excludeDescendants      = kingpin.Flag(`exclude-descendants`, `Do not traverse below this dataset: its child filesystems and volumes, and their snapshots, are neither queried nor reported. The dataset itself and its own snapshots are still collected. May be specified multiple times.`).PlaceHolder(`DATASET`).Strings()
 		hostRoot                = kingpin.Flag(`host-root`, `For containers: run zpool and zfs chrooted into this directory, where the host's root filesystem is mounted (the image sets /host). Unset (the default), they run from the exporter's own PATH as its own user. Linux only; needs CAP_SYS_CHROOT, CAP_SETUID and CAP_SETGID.`).String()
 		hostRootPath            = kingpin.Flag(`host-root.path`, `With --host-root: colon-separated directories inside the host root searched for zpool and zfs.`).Default(strings.Join(zfs.DefaultHostPath, `:`)).String()
 		hostRootUID             = kingpin.Flag(`host-root.uid`, `With --host-root: user ID that zpool and zfs run as.`).Default(`65534`).Uint32()
@@ -62,12 +63,13 @@ func main() {
 	}
 
 	c, err := collector.NewZFS(collector.ZFSConfig{
-		DisableMetrics: *metricsExporterDisabled,
-		Deadline:       *deadline,
-		Pools:          *pools,
-		Excludes:       *excludes,
-		Logger:         logger,
-		ZFSClient:      client,
+		DisableMetrics:     *metricsExporterDisabled,
+		Deadline:           *deadline,
+		Pools:              *pools,
+		Excludes:           *excludes,
+		ExcludeDescendants: *excludeDescendants,
+		Logger:             logger,
+		ZFSClient:          client,
 	})
 	if err != nil {
 		logger.Error("Error creating an exporter", "err", err)

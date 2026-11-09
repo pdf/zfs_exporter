@@ -17,14 +17,16 @@ type datasetResults struct {
 
 func TestDatsetMetrics(t *testing.T) {
 	testCases := []struct {
-		name           string
-		kinds          []zfs.DatasetKind
-		pools          []string
-		explicitPools  []string
-		propsRequested []string
-		metricNames    []string
-		propsResults   map[string][]datasetResults
-		metricResults  string
+		name          string
+		kinds         []zfs.DatasetKind
+		pools         []string
+		explicitPools []string
+		// excludeDescendants are passed through to the client unchanged.
+		excludeDescendants []string
+		propsRequested     []string
+		metricNames        []string
+		propsResults       map[string][]datasetResults
+		metricResults      string
 	}{
 		{
 			name:           `all metrics`,
@@ -195,6 +197,29 @@ zfs_dataset_available_bytes{name="testpool/test",pool="testpool",type="volume"} 
 `,
 		},
 		{
+			name:               `exclude descendants`,
+			kinds:              []zfs.DatasetKind{zfs.DatasetFilesystem, zfs.DatasetSnapshot},
+			pools:              []string{`testpool`},
+			excludeDescendants: []string{`testpool/docker`},
+			propsRequested:     []string{`available`},
+			metricNames:        []string{`zfs_dataset_available_bytes`},
+			propsResults: map[string][]datasetResults{
+				`testpool`: {
+					{
+						name: `testpool/docker`,
+						results: map[string]string{
+							`available`: `1024`,
+						},
+					},
+				},
+			},
+			metricResults: `# HELP zfs_dataset_available_bytes The amount of space in bytes available to the dataset and all its children.
+# TYPE zfs_dataset_available_bytes gauge
+zfs_dataset_available_bytes{name="testpool/docker",pool="testpool",type="filesystem"} 1024
+zfs_dataset_available_bytes{name="testpool/docker",pool="testpool",type="snapshot"} 1024
+`,
+		},
+		{
 			name:           `unsupported metric`,
 			kinds:          []zfs.DatasetKind{zfs.DatasetFilesystem},
 			pools:          []string{`testpool`},
@@ -227,6 +252,7 @@ zfs_dataset_unsupported{name="testpool/test",pool="testpool",type="filesystem"} 
 			if tc.explicitPools != nil {
 				config.Pools = tc.explicitPools
 			}
+			config.ExcludeDescendants = tc.excludeDescendants
 
 			zfsClient.EXPECT().PoolNames().Return(tc.pools, nil).Times(1)
 			collector, err := NewZFS(config)
@@ -281,7 +307,11 @@ zfs_dataset_unsupported{name="testpool/test",pool="testpool",type="filesystem"} 
 					}
 					zfsDatasets := mock_zfs.NewMockDatasets(ctrl)
 					zfsDatasets.EXPECT().Properties(tc.propsRequested).Return(zfsDatasetResults, nil).Times(1)
-					zfsClient.EXPECT().Datasets(pool, kind).Return(zfsDatasets).Times(1)
+					datasetsArgs := []any{}
+					for _, d := range tc.excludeDescendants {
+						datasetsArgs = append(datasetsArgs, d)
+					}
+					zfsClient.EXPECT().Datasets(pool, kind, datasetsArgs...).Return(zfsDatasets).Times(1)
 				}
 			}
 

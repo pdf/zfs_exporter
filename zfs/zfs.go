@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
 )
 
 // ErrInvalidOutput is returned on unparseable CLI output
@@ -18,7 +17,10 @@ var ErrInvalidOutput = errors.New(`invalid output executing command`)
 type Client interface {
 	PoolNames() ([]string, error)
 	Pool(name string) Pool
-	Datasets(pool string, kind DatasetKind) Datasets
+	// Datasets queries the datasets of kind in pool. Nothing below a dataset
+	// in excludeDescendants is queried; the dataset itself and its own
+	// snapshots still are.
+	Datasets(pool string, kind DatasetKind, excludeDescendants ...string) Datasets
 }
 
 // Pool allows querying pool properties
@@ -73,12 +75,14 @@ func (z clientImpl) Pool(name string) Pool {
 	return newPoolImpl(z.run, name)
 }
 
-func (z clientImpl) Datasets(pool string, kind DatasetKind) Datasets {
-	return newDatasetsImpl(z.run, pool, kind)
+func (z clientImpl) Datasets(pool string, kind DatasetKind, excludeDescendants ...string) Datasets {
+	return newDatasetsImpl(z.run, pool, kind, excludeDescendants)
 }
 
-func execute(run runner, pool string, h handler, cmd string, args ...string) error {
-	c := run.command(cmd, append(args, pool)...)
+// execute runs cmd with args followed by targets, and feeds each output line
+// to h, which validates it against pool.
+func execute(run runner, pool string, targets []string, h handler, cmd string, args ...string) error {
+	c := run.command(cmd, append(args, targets...)...)
 	out, err := c.StdoutPipe()
 	if err != nil {
 		return err
@@ -114,7 +118,7 @@ func execute(run runner, pool string, h handler, cmd string, args ...string) err
 
 	stde, _ := io.ReadAll(stderr)
 	if err = c.Wait(); err != nil {
-		return fmt.Errorf("failed to execute command '%s'; output: '%s' (%w)", c.String(), strings.TrimSpace(string(stde)), err)
+		return newCommandError(c, stde, err)
 	}
 	return nil
 }
