@@ -38,7 +38,7 @@ func (p poolImpl) Name() string {
 
 func (p poolImpl) Properties(props ...string) (PoolProperties, error) {
 	handler := newPoolPropertiesImpl()
-	if err := execute(p.run, p.name, handler, `zpool`, `get`, `-Hpo`, `name,property,value`, strings.Join(props, `,`)); err != nil {
+	if err := execute(p.run, p.name, []string{p.name}, handler, `zpool`, `get`, `-Hpo`, `name,property,value`, strings.Join(props, `,`)); err != nil {
 		return handler, err
 	}
 	return handler, nil

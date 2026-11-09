@@ -77,8 +77,10 @@ func (z clientImpl) Datasets(pool string, kind DatasetKind) Datasets {
 	return newDatasetsImpl(z.run, pool, kind)
 }
 
-func execute(run runner, pool string, h handler, cmd string, args ...string) error {
-	c := run.command(cmd, append(args, pool)...)
+// execute runs cmd with args followed by targets, and feeds each output line
+// to h, which validates it against pool.
+func execute(run runner, pool string, targets []string, h handler, cmd string, args ...string) error {
+	c := run.command(cmd, append(args, targets...)...)
 	out, err := c.StdoutPipe()
 	if err != nil {
 		return err

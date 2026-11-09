@@ -41,7 +41,7 @@ func (d datasetsImpl) Kind() DatasetKind {
 
 func (d datasetsImpl) Properties(props ...string) ([]DatasetProperties, error) {
 	handler := newDatasetHandler()
-	if err := execute(d.run, d.pool, handler, `zfs`, `get`, `-Hprt`, string(d.kind), `-o`, `name,property,value`, strings.Join(props, `,`)); err != nil {
+	if err := execute(d.run, d.pool, []string{d.pool}, handler, `zfs`, `get`, `-Hprt`, string(d.kind), `-o`, `name,property,value`, strings.Join(props, `,`)); err != nil {
 		return nil, err
 	}
 	return handler.datasets(), nil
