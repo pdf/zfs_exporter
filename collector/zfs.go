@@ -84,39 +84,11 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 	// Synchronize on collector completion.
 	wg := sync.WaitGroup{}
 	wg.Add(len(c.Collectors))
-	// Synchonize after timeout event, ensuring no writers are still active when we return control.
-	timeout := make(chan struct{})
-	finalized := make(chan struct{})
-	finalize := func() {
-		select {
-		case <-finalized:
-		default:
-			close(finalized)
-		}
-	}
 
 	// Close the proxy channel upon collector completion.
 	go func() {
 		wg.Wait()
 		close(proxy)
-	}()
-
-	// Cache metrics as they come in via the proxy channel, and ship them out if we've not exceeded the deadline.
-	go func() {
-		for metric := range proxy {
-			cache.add(metric)
-			select {
-			case <-timeout:
-				finalize()
-			default:
-				ch <- metric.prometheus
-			}
-		}
-		// Signal completion and update full cache.
-		c.cache.replace(cache)
-		cancel()
-		// Notify next collection that we're ready to collect again
-		c.ready <- struct{}{}
 	}()
 
 	pools, poolErr := c.getPools(c.Pools)
@@ -128,8 +100,10 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 		}
 
 		if poolErr != nil {
-			c.publishCollectorMetrics(ctx, name, poolErr, 0, proxy)
-			wg.Done()
+			go func(name string) {
+				c.publishCollectorMetrics(ctx, name, poolErr, 0, proxy)
+				wg.Done()
+			}(name)
 			continue
 		}
 
@@ -145,20 +119,39 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 		}(name, collector)
 	}
 
-	// Wait for completion or timeout
-	<-ctx.Done()
-	err := ctx.Err()
-	if err == context.Canceled {
-		finalize()
-	} else if err != nil {
-		// Upon exceeding deadline, send cached data for any metrics that have not already been reported.
-		close(timeout) // assert timeout for flow control in other goroutines
-		c.cache.merge(cache)
-		cacheIndex := cache.index()
-		c.sendCached(ch, cacheIndex)
+	// Forward metrics to ch until collection completes or the deadline passes.
+	// Only this goroutine writes to ch, so nothing is written after Collect returns.
+	for {
+		select {
+		case metric, ok := <-proxy:
+			if !ok {
+				c.finish(cache)
+				return
+			}
+			cache.add(metric)
+			ch <- metric.prometheus
+		case <-ctx.Done():
+			// Upon exceeding deadline, send cached data for any metrics that have
+			// not already been reported, and let collection finish in the background.
+			c.cache.merge(cache)
+			cacheIndex := cache.index()
+			go func() {
+				for metric := range proxy {
+					cache.add(metric)
+				}
+				c.finish(cache)
+			}()
+			c.sendCached(ch, cacheIndex)
+			return
+		}
 	}
-	// Ensure there are no in-flight writes to the upstream channel
-	<-finalized
+}
+
+// finish replaces the cache with a completed collection, and notifies the next
+// collection that it may proceed.
+func (c *ZFS) finish(cache *metricCache) {
+	c.cache.replace(cache)
+	c.ready <- struct{}{}
 }
 
 // sendCached values that do not appear in the current cacheIndex.
