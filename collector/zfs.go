@@ -69,6 +69,10 @@ func (c *ZFS) Describe(ch chan<- *prometheus.Desc) {
 }
 
 // Collect implements the prometheus.Collector interface.
+//
+// Only the calling goroutine writes to ch, so nothing is written to it after Collect returns. If the collection
+// exceeds the deadline, the cache is sent for any metrics not yet collected, and the collection continues in the
+// background to update the cache. Collections never run concurrently: while one is running, the cache is sent.
 func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 	select {
 	case <-c.ready:
@@ -76,89 +80,92 @@ func (c *ZFS) Collect(ch chan<- prometheus.Metric) {
 		c.sendCached(ch, make(map[string]struct{}))
 		return
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), c.deadline)
 	defer cancel()
 
-	cache := newMetricCache()
 	proxy := make(chan metric)
-	// Synchronize on collector completion.
-	wg := sync.WaitGroup{}
-	wg.Add(len(c.Collectors))
-	// Synchonize after timeout event, ensuring no writers are still active when we return control.
-	timeout := make(chan struct{})
-	finalized := make(chan struct{})
-	finalize := func() {
-		select {
-		case <-finalized:
-		default:
-			close(finalized)
-		}
+	go func() {
+		defer close(proxy)
+		c.run(ctx, proxy)
+	}()
+
+	cache := newMetricCache()
+	finish := func() {
+		c.cache.replace(cache)
+		c.ready <- struct{}{}
 	}
 
-	// Close the proxy channel upon collector completion.
-	go func() {
-		wg.Wait()
-		close(proxy)
-	}()
-
-	// Cache metrics as they come in via the proxy channel, and ship them out if we've not exceeded the deadline.
-	go func() {
-		for metric := range proxy {
-			cache.add(metric)
-			select {
-			case <-timeout:
-				finalize()
-			default:
-				ch <- metric.prometheus
-			}
+	// forward sends a metric from proxy, or finishes the collection when proxy is closed and reports true.
+	forward := func(m metric, ok bool) bool {
+		if !ok {
+			finish()
+			return true
 		}
-		// Signal completion and update full cache.
-		c.cache.replace(cache)
-		cancel()
-		// Notify next collection that we're ready to collect again
-		c.ready <- struct{}{}
-	}()
+		cache.add(m)
+		ch <- m.prometheus
+		return false
+	}
 
+	for {
+		select {
+		case metric, ok := <-proxy:
+			if forward(metric, ok) {
+				return
+			}
+		case <-ctx.Done():
+			// The collection may have completed at the same moment as the deadline, so check proxy once before
+			// falling back to the cache. If so, return the fresh data instead.
+			select {
+			case metric, ok := <-proxy:
+				if forward(metric, ok) {
+					return
+				}
+			default:
+			}
+
+			// Send cached data for any metrics that have not already been reported, then hand the rest of the
+			// collection off to the background.
+			c.cache.merge(cache)
+			c.sendCached(ch, cache.index())
+			go func() {
+				for metric := range proxy {
+					cache.add(metric)
+				}
+				finish()
+			}()
+
+			return
+		}
+	}
+}
+
+// run executes the enabled collectors, sending their metrics to ch, and returns once they have all completed.
+func (c *ZFS) run(ctx context.Context, ch chan<- metric) {
 	pools, poolErr := c.getPools(c.Pools)
 
+	var wg sync.WaitGroup
 	for name, state := range c.Collectors {
 		if !*state.Enabled {
-			wg.Done()
 			continue
 		}
 
 		if poolErr != nil {
-			c.publishCollectorMetrics(ctx, name, poolErr, 0, proxy)
-			wg.Done()
+			c.publishCollectorMetrics(ctx, name, poolErr, 0, ch)
 			continue
 		}
 
 		collector, err := state.factory(c.logger, c.client, strings.Split(*state.Properties, `,`))
 		if err != nil {
 			c.logger.Error("Error instantiating collector", "collector", name, "err", err)
-			wg.Done()
 			continue
 		}
-		go func(name string, collector Collector) {
-			c.execute(ctx, name, collector, proxy, pools)
-			wg.Done()
-		}(name, collector)
-	}
 
-	// Wait for completion or timeout
-	<-ctx.Done()
-	err := ctx.Err()
-	if err == context.Canceled {
-		finalize()
-	} else if err != nil {
-		// Upon exceeding deadline, send cached data for any metrics that have not already been reported.
-		close(timeout) // assert timeout for flow control in other goroutines
-		c.cache.merge(cache)
-		cacheIndex := cache.index()
-		c.sendCached(ch, cacheIndex)
+		wg.Go(func() {
+			c.execute(ctx, name, collector, ch, pools)
+		})
 	}
-	// Ensure there are no in-flight writes to the upstream channel
-	<-finalized
+	wg.Wait()
 }
 
 // sendCached values that do not appear in the current cacheIndex.
