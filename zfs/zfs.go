@@ -19,6 +19,7 @@ type Client interface {
 	PoolNames() ([]string, error)
 	Pool(name string) Pool
 	Datasets(pool string, kind DatasetKind) Datasets
+	PoolTopology(pool string) (PoolTopology, error)
 }
 
 // Pool allows querying pool properties
@@ -62,7 +63,8 @@ func (directRunner) command(name string, args ...string) *exec.Cmd {
 }
 
 type clientImpl struct {
-	run runner
+	run       runner
+	sysfsRoot string
 }
 
 func (z clientImpl) PoolNames() ([]string, error) {
@@ -121,5 +123,5 @@ func execute(run runner, pool string, h handler, cmd string, args ...string) err
 
 // New instantiates a ZFS Client
 func New() Client {
-	return clientImpl{run: directRunner{}}
+	return clientImpl{run: directRunner{}, sysfsRoot: "/"}
 }
