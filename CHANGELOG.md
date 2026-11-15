@@ -1,3 +1,11 @@
+### [2.5.2](https://github.com/pdf/zfs_exporter/compare/v2.5.1...v2.5.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* **collector:** Return from Collect at the deadline ([5006c06](https://github.com/pdf/zfs_exporter/commit/5006c0672f60180c4acbb0cdac1a5a1b953f6512)), closes [#79](https://github.com/pdf/zfs_exporter/issues/79) [#38](https://github.com/pdf/zfs_exporter/issues/38) [#77](https://github.com/pdf/zfs_exporter/issues/77)
+
+
 ### [2.5.1](https://github.com/pdf/zfs_exporter/compare/v2.5.0...v2.5.1) (2026-10-20)
 
 
